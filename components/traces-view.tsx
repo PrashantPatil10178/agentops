@@ -9,6 +9,8 @@ import {
   Circle,
   ChevronRight,
   ChevronDown,
+  Wrench,
+  GitBranch,
 } from "lucide-react";
 import type { Trace, TreeSpan } from "@/types/observability";
 import { fetchTraces } from "@/lib/observability-api";
@@ -34,14 +36,13 @@ export function TracesView({ agentId, onTraceSelect }: TracesViewProps) {
       const response = await fetchTraces(agentId);
       if (response.success && response.data.traces) {
         setTraces(response.data.traces);
-        // Auto-select first trace
         if (response.data.traces.length > 0) {
           setSelectedTrace(response.data.traces[0]);
           onTraceSelect?.(response.data.traces[0]);
         }
       }
-    } catch (error) {
-      console.error("Failed to load traces:", error);
+    } catch (err) {
+      console.error("Failed to load traces:", err);
     } finally {
       setLoading(false);
     }
@@ -50,39 +51,31 @@ export function TracesView({ agentId, onTraceSelect }: TracesViewProps) {
   const toggleSpan = (spanId: string) => {
     setExpandedSpans((prev) => {
       const next = new Set(prev);
-      if (next.has(spanId)) {
-        next.delete(spanId);
-      } else {
-        next.add(spanId);
-      }
+      next.has(spanId) ? next.delete(spanId) : next.add(spanId);
       return next;
     });
   };
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString("en-US", {
+  const formatTime = (ts: string) =>
+    new Date(ts).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
     });
-  };
 
-  const formatDuration = (ms: number) => {
-    if (ms < 1000) return `${Math.round(ms)}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
-  };
+  const formatDuration = (ms: number) =>
+    ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(2)}s`;
 
   const getStatusIcon = (code: number) => {
     if (code === 1)
-      return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
-    if (code === 2) return <XCircle className="w-4 h-4 text-red-500" />;
-    return <Circle className="w-4 h-4 text-slate-500" />;
+      return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
+    if (code === 2)
+      return <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />;
+    return <Circle className="w-3.5 h-3.5 text-[var(--muted-foreground)] shrink-0" />;
   };
 
-  const getAgentState = (attributes: any) => {
-    return attributes["agent.state"] || "unknown";
-  };
+  const getAgentState = (attributes: any) =>
+    attributes["agent.state"] || "unknown";
 
   const renderSpanTree = (span: TreeSpan, depth: number = 0) => {
     const isExpanded = expandedSpans.has(span.spanId);
@@ -91,264 +84,298 @@ export function TracesView({ agentId, onTraceSelect }: TracesViewProps) {
 
     return (
       <div key={span.spanId} className="relative">
-        {/* Connection line from parent */}
-        {depth > 0 && (
-          <svg
-            className="absolute left-0 top-0 pointer-events-none"
-            style={{
-              width: `${depth * 60}px`,
-              height: "100%",
-            }}
-          >
-            {/* Curved connection */}
-            <path
-              d={`M ${depth * 60 - 30} 24 Q ${depth * 60 - 15} 24, ${
-                depth * 60
-              } 24`}
-              fill="none"
-              stroke="rgba(16, 185, 129, 0.3)"
-              strokeWidth="2"
-            />
-            {/* Vertical line */}
-            <line
-              x1={depth * 60 - 30}
-              y1="0"
-              x2={depth * 60 - 30}
-              y2="24"
-              stroke="rgba(16, 185, 129, 0.3)"
-              strokeWidth="2"
-            />
-          </svg>
-        )}
-
-        {/* Span card */}
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.2 }}
-          className="relative mb-2"
-          style={{ marginLeft: `${depth * 60}px` }}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18 }}
+          className="mb-1.5"
+          style={{ marginLeft: `${depth * 20}px` }}
         >
-          <div
-            className={`relative bg-slate-900/50 border-2 rounded-lg p-3 transition-all duration-200 cursor-pointer hover:border-emerald-500/50 ${
-              isToolSpan
-                ? "border-blue-500/30"
-                : span.status.code === 2
-                ? "border-red-500/30"
-                : "border-slate-700/50"
-            }`}
-            onClick={() => hasChildren && toggleSpan(span.spanId)}
-          >
-            {/* Dot grid background */}
+          {/* Connector line */}
+          {depth > 0 && (
             <div
-              className="absolute inset-0 opacity-30 pointer-events-none rounded-lg"
+              className="absolute left-0 top-4 bottom-0 w-px"
               style={{
-                backgroundImage:
-                  "radial-gradient(circle, #10b981 1px, transparent 1px)",
-                backgroundSize: "20px 20px",
-                backgroundPosition: "0 0",
+                left: -10,
+                background:
+                  "linear-gradient(180deg, rgba(16,185,129,0.3), transparent)",
               }}
             />
+          )}
 
-            <div className="relative flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
-                {/* Expand/Collapse */}
-                {hasChildren && (
-                  <div className="shrink-0">
-                    {isExpanded ? (
-                      <ChevronDown className="w-4 h-4 text-emerald-500" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                    )}
-                  </div>
-                )}
+          <div
+            className="relative p-2.5 rounded-xl border cursor-pointer transition-all duration-150 hover:border-emerald-500/40 hover:bg-[var(--surface-2)]"
+            style={{
+              background: "var(--surface)",
+              borderColor: isToolSpan
+                ? "rgba(59,130,246,0.25)"
+                : span.status.code === 2
+                  ? "rgba(239,68,68,0.25)"
+                  : "var(--border-strong)",
+            }}
+            onClick={() => hasChildren && toggleSpan(span.spanId)}
+          >
+            <div className="flex items-start gap-2">
+              {/* Expand toggle */}
+              {hasChildren ? (
+                <motion.div
+                  animate={{ rotate: isExpanded ? 90 : 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="shrink-0 mt-0.5"
+                >
+                  <ChevronRight className="w-3 h-3 text-emerald-500" />
+                </motion.div>
+              ) : (
+                <div className="w-3 shrink-0" />
+              )}
 
-                {/* Status icon */}
-                <div className="shrink-0">
-                  {getStatusIcon(span.status.code)}
-                </div>
+              {getStatusIcon(span.status.code)}
 
-                {/* Span info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-slate-200 truncate">
-                      {isToolSpan ? (
-                        <span className="flex items-center gap-2">
-                          <span className="text-blue-400">🔧</span>
-                          {span.attributes["tool.name"]}
-                        </span>
-                      ) : (
-                        span.name
-                      )}
-                    </span>
-                    {isToolSpan && (
-                      <span className="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
-                        Tool
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs font-semibold text-[var(--foreground)] truncate">
+                    {isToolSpan ? (
+                      <span className="flex items-center gap-1.5">
+                        <Wrench className="w-3 h-3 text-blue-500 inline shrink-0" />
+                        {span.attributes["tool.name"]}
                       </span>
+                    ) : (
+                      span.name
                     )}
-                  </div>
-
-                  {/* Span details */}
-                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatDuration(span.duration)}
+                  </span>
+                  {isToolSpan && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-blue-500/10 text-blue-500 dark:text-blue-400 rounded-md border border-blue-500/20">
+                      Tool
                     </span>
-                    <span className="opacity-60">•</span>
-                    <span className="truncate">
-                      {formatTime(span.startTime)}
-                    </span>
-                  </div>
+                  )}
                 </div>
-
-                {/* Token count for agent spans */}
-                {span.attributes["usage.total_tokens"] && (
-                  <div className="shrink-0 text-xs text-slate-400">
-                    <span className="flex items-center gap-1">
-                      In: {span.attributes["usage.prompt_tokens"]} | Out:{" "}
-                      {span.attributes["usage.completion_tokens"]} | Total:{" "}
-                      {span.attributes["usage.total_tokens"]}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 mt-0.5 text-[10px] text-[var(--muted-foreground)]">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-2.5 h-2.5" />
+                    {formatDuration(span.duration)}
+                  </span>
+                  <span className="opacity-50">·</span>
+                  <span>{formatTime(span.startTime)}</span>
+                </div>
               </div>
+
+              {/* Token count */}
+              {span.attributes["usage.total_tokens"] && (
+                <div className="shrink-0 text-[10px] text-[var(--muted-foreground)] font-mono">
+                  {span.attributes["usage.total_tokens"]}t
+                </div>
+              )}
             </div>
 
-            {/* Tool input/output preview */}
-            {isToolSpan && (
-              <div className="mt-2 space-y-1">
-                {span.attributes["input"] && (
-                  <div className="text-xs">
-                    <span className="text-slate-500">Input: </span>
-                    <span className="text-slate-300 font-mono">
-                      {span.attributes["input"]}
-                    </span>
-                  </div>
-                )}
-                {span.attributes["output"] && (
-                  <div className="text-xs">
-                    <span className="text-slate-500">Output: </span>
-                    <span className="text-slate-300 font-mono line-clamp-2">
-                      {typeof span.attributes["output"] === "string"
-                        ? span.attributes["output"]
-                        : JSON.stringify(span.attributes["output"])}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Tool IO preview */}
+            {isToolSpan &&
+              (span.attributes["input"] || span.attributes["output"]) && (
+                <div className="mt-2 space-y-1 pl-5">
+                  {span.attributes["input"] && (
+                    <div className="text-[10px]">
+                      <span className="text-[var(--muted-foreground)]">In: </span>
+                      <span className="text-[var(--foreground)] font-mono opacity-80 line-clamp-1">
+                        {span.attributes["input"]}
+                      </span>
+                    </div>
+                  )}
+                  {span.attributes["output"] && (
+                    <div className="text-[10px]">
+                      <span className="text-[var(--muted-foreground)]">Out: </span>
+                      <span className="text-[var(--foreground)] font-mono opacity-80 line-clamp-1">
+                        {typeof span.attributes["output"] === "string"
+                          ? span.attributes["output"]
+                          : JSON.stringify(span.attributes["output"])}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
           </div>
         </motion.div>
 
-        {/* Render children */}
-        {isExpanded && hasChildren && (
-          <div className="relative">
-            {span.children.map((child) => renderSpanTree(child, depth + 1))}
-          </div>
-        )}
+        {/* Children */}
+        <AnimatePresence>
+          {isExpanded && hasChildren && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {span.children.map((child) => renderSpanTree(child, depth + 1))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-3 text-slate-400">
-          <RefreshCw className="w-5 h-5 animate-spin" />
-          <span>Loading traces...</span>
+      <div className="flex flex-col gap-3 p-4">
+        <div className="flex items-center gap-2 text-[var(--muted-foreground)] text-sm mb-2">
+          <RefreshCw className="w-4 h-4 animate-spin text-emerald-500" />
+          <span>Loading traces…</span>
         </div>
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-14 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] animate-pulse"
+            style={{ opacity: 1 - i * 0.2 }}
+          />
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="flex h-full bg-slate-950">
-      {/* Left sidebar - Traces list */}
-      <div className="w-80 border-r border-slate-800 flex flex-col">
+    <div className="flex h-full">
+      {/* Traces list */}
+      <div className="w-full flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-slate-800">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-slate-200">
-              Local ({traces.length})
-            </h3>
-            <button
-              onClick={loadTraces}
-              className="p-1.5 hover:bg-slate-800 rounded-md transition-colors"
-              title="Refresh traces"
-            >
-              <RefreshCw className="w-4 h-4 text-slate-400" />
-            </button>
+        <div className="px-4 py-3 border-b border-[var(--border-strong)] bg-[var(--surface)] sticky top-0 z-10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GitBranch className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs font-semibold text-[var(--foreground)]">
+              Traces
+              {traces.length > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md border border-emerald-500/20">
+                  {traces.length}
+                </span>
+              )}
+            </span>
           </div>
+          <motion.button
+            onClick={loadTraces}
+            className="p-1.5 hover:bg-[var(--surface-2)] rounded-lg transition-colors cursor-pointer"
+            whileHover={{ rotate: 180 }}
+            transition={{ duration: 0.3 }}
+            title="Refresh"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-[var(--muted-foreground)]" />
+          </motion.button>
         </div>
 
-        {/* Traces list */}
+        {/* Trace list */}
         <div className="flex-1 overflow-y-auto">
-          {traces.map((trace) => {
-            const mainSpan = trace.tree[0];
-            const isSelected = selectedTrace?.traceId === trace.traceId;
-            const agentState = getAgentState(mainSpan.attributes);
+          {traces.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-4 gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[var(--surface-2)] flex items-center justify-center">
+                <GitBranch className="w-5 h-5 text-[var(--muted-foreground)]" />
+              </div>
+              <p className="text-xs text-[var(--muted-foreground)] text-center">
+                No traces yet.
+                <br />
+                Run the agent to generate traces.
+              </p>
+            </div>
+          ) : (
+            traces.map((trace, idx) => {
+              const mainSpan = trace.tree[0];
+              const isSelected = selectedTrace?.traceId === trace.traceId;
+              const agentState = getAgentState(mainSpan.attributes);
 
-            return (
-              <motion.div
-                key={trace.traceId}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`p-3 border-b border-slate-800 cursor-pointer transition-colors ${
-                  isSelected
-                    ? "bg-emerald-500/10 border-l-2 border-l-emerald-500"
-                    : "hover:bg-slate-900/50"
-                }`}
-                onClick={() => {
-                  setSelectedTrace(trace);
-                  onTraceSelect?.(trace);
-                }}
-              >
-                <div className="flex items-start gap-2">
-                  <div className="shrink-0 mt-0.5">
-                    {getStatusIcon(mainSpan.status.code)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-slate-200 truncate">
-                        {mainSpan.name}
-                      </span>
-                      {agentState === "completed" && (
-                        <span className="px-1.5 py-0.5 text-xs bg-emerald-500/20 text-emerald-400 rounded border border-emerald-500/30">
-                          Completed
-                        </span>
-                      )}
-                      {agentState === "error" && (
-                        <span className="px-1.5 py-0.5 text-xs bg-red-500/20 text-red-400 rounded border border-red-500/30">
-                          Error
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      {formatTime(mainSpan.startTime)} • {trace.spanCount} span
-                      {trace.spanCount !== 1 ? "s" : ""} •{" "}
-                      {formatDuration(mainSpan.duration)}
-                    </div>
-                    {mainSpan.attributes["output"] && (
-                      <div className="text-xs text-slate-500 mt-1 line-clamp-2">
-                        {mainSpan.attributes["output"]}
+              return (
+                <motion.div
+                  key={trace.traceId}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.04 }}
+                  className="relative cursor-pointer"
+                  onClick={() => {
+                    setSelectedTrace(trace);
+                    onTraceSelect?.(trace);
+                  }}
+                >
+                  {/* Selected indicator */}
+                  {isSelected && (
+                    <motion.div
+                      layoutId="selectedTrace"
+                      className="absolute inset-0 bg-emerald-500/5 border-l-2 border-l-emerald-500"
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 40,
+                      }}
+                    />
+                  )}
+
+                  <div
+                    className={`relative px-4 py-3 border-b border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors ${isSelected ? "" : ""}`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <div className="shrink-0 mt-0.5">
+                        {getStatusIcon(mainSpan.status.code)}
                       </div>
-                    )}
-                    {mainSpan.attributes["usage.total_tokens"] && (
-                      <div className="text-xs text-slate-500 mt-1">
-                        In: {mainSpan.attributes["usage.prompt_tokens"]} | Out:{" "}
-                        {mainSpan.attributes["usage.completion_tokens"]} |
-                        Total: {mainSpan.attributes["usage.total_tokens"]}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                          <span className="text-xs font-semibold text-[var(--foreground)] truncate">
+                            {mainSpan.name}
+                          </span>
+                          {agentState === "completed" && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded border border-emerald-500/20 shrink-0">
+                              Done
+                            </span>
+                          )}
+                          {agentState === "error" && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-red-500/10 text-red-500 rounded border border-red-500/20 shrink-0">
+                              Error
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-[var(--muted-foreground)] flex items-center gap-1.5">
+                          <span>{formatTime(mainSpan.startTime)}</span>
+                          <span className="opacity-40">·</span>
+                          <span>
+                            {trace.spanCount} span
+                            {trace.spanCount !== 1 ? "s" : ""}
+                          </span>
+                          <span className="opacity-40">·</span>
+                          <span className="font-mono">
+                            {formatDuration(mainSpan.duration)}
+                          </span>
+                        </div>
+                        {mainSpan.attributes["usage.total_tokens"] && (
+                          <div className="text-[10px] text-[var(--muted-foreground)] mt-0.5 font-mono">
+                            {mainSpan.attributes["usage.prompt_tokens"]}↑{" "}
+                            {mainSpan.attributes["usage.completion_tokens"]}↓{" "}
+                            {mainSpan.attributes["usage.total_tokens"]} total
+                          </div>
+                        )}
+                        {selectedTrace?.traceId === trace.traceId &&
+                          mainSpan.children?.length > 0 && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              className="mt-2 space-y-1 overflow-hidden"
+                            >
+                              {mainSpan.children
+                                .slice(0, 3)
+                                .map((child: any) => (
+                                  <div
+                                    key={child.spanId}
+                                    className="flex items-center gap-1.5"
+                                  >
+                                    <div className="w-3 h-px bg-[var(--border-strong)]" />
+                                    {getStatusIcon(child.status.code)}
+                                    <span className="text-[10px] text-[var(--muted-foreground)] truncate">
+                                      {child.attributes["tool.name"] ||
+                                        child.name}
+                                    </span>
+                                  </div>
+                                ))}
+                            </motion.div>
+                          )}
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                </motion.div>
+              );
+            })
+          )}
         </div>
       </div>
-
-      {/* Right side - Trace visualization */}
     </div>
   );
 }

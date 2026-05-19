@@ -30,8 +30,8 @@ export const CardSpotlight = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-slate-800/50 bg-linear-to-br from-slate-900/50 to-slate-950/50 backdrop-blur-sm",
-        className
+        "relative overflow-hidden rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] backdrop-blur-sm shadow-lg",
+        className,
       )}
       {...props}
     >

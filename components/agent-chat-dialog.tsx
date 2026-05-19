@@ -9,10 +9,10 @@ import {
   RefreshCw,
   Wrench,
   ChevronDown,
-  ChevronRight,
   CheckCircle2,
   Image as ImageIcon,
-  Paperclip,
+  Bot,
+  AlertTriangle,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -48,7 +48,6 @@ interface Message {
   images?: string[];
 }
 
-// Tool Call Display Component
 function ToolCallDisplay({
   toolCall,
   onToggle,
@@ -60,81 +59,79 @@ function ToolCallDisplay({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-3 rounded-xl border border-slate-700/50 bg-slate-900/30 overflow-hidden"
+      className="mb-2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-2)] overflow-hidden"
     >
-      {/* Header */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800/30 transition-colors"
+        className="w-full flex items-center gap-3 px-3.5 py-2.5 hover:bg-[var(--surface-3)] transition-colors cursor-pointer text-left"
       >
-        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-          <Wrench className="w-4 h-4 text-emerald-400" />
+        <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+          <Wrench className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
         </div>
-        <div className="flex-1 text-left">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-mono text-emerald-400">
-              tool-{toolCall.name}
+            <span className="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400 truncate">
+              {toolCall.name}
             </span>
             {isCompleted && (
-              <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 rounded-full">
-                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                <span className="text-xs text-emerald-400">Completed</span>
-              </div>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-500/10 rounded-full shrink-0">
+                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  Done
+                </span>
+              </span>
+            )}
+            {!isCompleted && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/10 rounded-full shrink-0">
+                <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                  Running
+                </span>
+              </span>
             )}
           </div>
         </div>
         <motion.div
           animate={{ rotate: toolCall.isExpanded ? 0 : -90 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.15 }}
         >
-          <ChevronDown className="w-4 h-4 text-slate-400" />
+          <ChevronDown className="w-3.5 h-3.5 text-[var(--muted-foreground)]" />
         </motion.div>
       </button>
 
-      {/* Expandable Content */}
       <AnimatePresence>
         {toolCall.isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.18 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 space-y-3">
-              {/* Parameters */}
+            <div className="px-3.5 pb-3.5 space-y-2.5 border-t border-[var(--border)]">
               {toolCall.input && (
-                <div>
-                  <div className="text-xs font-medium text-slate-400 mb-2 uppercase tracking-wide">
+                <div className="pt-2.5">
+                  <div className="text-[10px] font-semibold text-[var(--muted-foreground)] mb-1.5 uppercase tracking-wider">
                     Parameters
                   </div>
-                  <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-700/30">
-                    <pre className="text-xs text-slate-300 font-mono overflow-x-auto">
+                  <div className="bg-[var(--surface)] rounded-lg p-2.5 border border-[var(--border-strong)]">
+                    <pre className="text-[11px] text-[var(--foreground)] font-mono overflow-x-auto leading-relaxed">
                       {JSON.stringify(toolCall.input, null, 2)}
                     </pre>
                   </div>
                 </div>
               )}
-
-              {/* Result */}
               {toolCall.output && (
                 <div>
-                  <div className="text-xs font-medium text-slate-400 mb-2 uppercase tracking-wide">
+                  <div className="text-[10px] font-semibold text-[var(--muted-foreground)] mb-1.5 uppercase tracking-wider">
                     Result
                   </div>
-                  <div className="bg-slate-950/50 rounded-lg p-3 border border-slate-700/30">
-                    <pre className="text-xs text-slate-300 font-mono overflow-x-auto whitespace-pre-wrap">
+                  <div className="bg-[var(--surface)] rounded-lg p-2.5 border border-[var(--border-strong)]">
+                    <pre className="text-[11px] text-[var(--foreground)] font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">
                       {JSON.stringify(toolCall.output, null, 2)}
                     </pre>
-                  </div>
-
-                  {/* Download button */}
-                  <div className="flex justify-end mt-2">
-                    <button className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors">
-                      <ChevronDown className="w-4 h-4 text-emerald-400" />
-                    </button>
                   </div>
                 </div>
               )}
@@ -158,33 +155,26 @@ export function AgentChatDialog({
   const [streamingToolCalls, setStreamingToolCalls] = useState<ToolCall[]>([]);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [conversationId] = useState(() =>
-    Math.random().toString(36).substring(2, 15)
+    Math.random().toString(36).substring(2, 15),
   );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = () =>
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages, streamingMessage, streamingToolCalls]);
-
   useEffect(() => {
-    if (isOpen) {
-      inputRef.current?.focus();
-    }
+    if (isOpen) inputRef.current?.focus();
   }, [isOpen]);
 
-  const generateMessageId = () => {
-    return (
-      Math.random().toString(36).substring(2, 15) +
-      Math.random().toString(36).substring(2, 15)
-    );
-  };
+  const generateMessageId = () =>
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15);
 
   const handleClearChat = () => {
     setMessages([]);
@@ -196,63 +186,54 @@ export function AgentChatDialog({
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-
-    const imagePromises = Array.from(files).map((file) => {
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-    });
-
-    Promise.all(imagePromises).then((images) => {
-      setSelectedImages((prev) => [...prev, ...images]);
-    });
+    Promise.all(
+      Array.from(files).map(
+        (file) =>
+          new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          }),
+      ),
+    ).then((images) => setSelectedImages((prev) => [...prev, ...images]));
   };
 
-  const removeImage = (index: number) => {
+  const removeImage = (index: number) =>
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
-  };
 
-  const toggleToolCall = (messageId: string, toolCallId: string) => {
-    setMessages((prevMessages) =>
-      prevMessages.map((msg) => {
-        if (msg.id === messageId && msg.toolCalls) {
-          return {
-            ...msg,
-            toolCalls: msg.toolCalls.map((tc) =>
-              tc.id === toolCallId ? { ...tc, isExpanded: !tc.isExpanded } : tc
-            ),
-          };
-        }
-        return msg;
-      })
+  const toggleToolCall = (messageId: string, toolCallId: string) =>
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId && msg.toolCalls
+          ? {
+              ...msg,
+              toolCalls: msg.toolCalls.map((tc) =>
+                tc.id === toolCallId
+                  ? { ...tc, isExpanded: !tc.isExpanded }
+                  : tc,
+              ),
+            }
+          : msg,
+      ),
     );
-  };
 
-  const toggleStreamingToolCall = (toolCallId: string) => {
-    setStreamingToolCalls((prevTools) =>
-      prevTools.map((tc) =>
-        tc.id === toolCallId ? { ...tc, isExpanded: !tc.isExpanded } : tc
-      )
+  const toggleStreamingToolCall = (toolCallId: string) =>
+    setStreamingToolCalls((prev) =>
+      prev.map((tc) =>
+        tc.id === toolCallId ? { ...tc, isExpanded: !tc.isExpanded } : tc,
+      ),
     );
-  };
 
   const handleSendMessage = async () => {
     if ((!inputValue.trim() && selectedImages.length === 0) || isLoading)
       return;
 
     const parts: MessagePart[] = [];
-
-    // Add text if available
-    if (inputValue.trim()) {
+    if (inputValue.trim())
       parts.push({ type: "text", text: inputValue.trim() });
-    }
-
-    // Add images if available
-    selectedImages.forEach((img) => {
-      parts.push({ type: "image", imageUrl: img });
-    });
+    selectedImages.forEach((img) =>
+      parts.push({ type: "image", imageUrl: img }),
+    );
 
     const userMessage: Message = {
       id: generateMessageId(),
@@ -268,10 +249,7 @@ export function AgentChatDialog({
     setIsLoading(true);
     setStreamingMessage("");
 
-    // Abort any ongoing request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+    if (abortControllerRef.current) abortControllerRef.current.abort();
     abortControllerRef.current = new AbortController();
 
     try {
@@ -279,10 +257,7 @@ export function AgentChatDialog({
         `http://localhost:3141/agents/${agent.id}/chat`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "*/*",
-          },
+          headers: { "Content-Type": "application/json", Accept: "*/*" },
           body: JSON.stringify({
             input: messages.concat(userMessage).map((msg) => ({
               parts: msg.parts,
@@ -290,19 +265,18 @@ export function AgentChatDialog({
               role: msg.role,
             })),
             options: {
-              conversationId: conversationId,
+              conversationId,
               temperature: 0.7,
               maxTokens: 4000,
               maxSteps: 10,
             },
           }),
           signal: abortControllerRef.current.signal,
-        }
+        },
       );
 
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -313,108 +287,77 @@ export function AgentChatDialog({
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
-
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6);
-
-              if (data === "[DONE]") {
-                continue;
-              }
-
-              try {
-                const parsed = JSON.parse(data);
-
-                // Handle tool call events
-                if (parsed.type === "tool-input-start") {
-                  const newToolCall: ToolCall = {
-                    id: parsed.toolCallId,
-                    name: parsed.toolName,
-                    status: "pending",
-                    isExpanded: true,
-                  };
-                  toolCalls.push(newToolCall);
+          for (const line of chunk.split("\n")) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6);
+            if (data === "[DONE]") continue;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.type === "tool-input-start") {
+                toolCalls.push({
+                  id: parsed.toolCallId,
+                  name: parsed.toolName,
+                  status: "pending",
+                  isExpanded: true,
+                });
+                setStreamingToolCalls([...toolCalls]);
+              } else if (parsed.type === "tool-input-available") {
+                const tc = toolCalls.find((t) => t.id === parsed.toolCallId);
+                if (tc) {
+                  tc.input = parsed.input;
+                  tc.status = "input-available";
                   setStreamingToolCalls([...toolCalls]);
-                } else if (parsed.type === "tool-input-delta") {
-                  const toolCall = toolCalls.find(
-                    (tc) => tc.id === parsed.toolCallId
-                  );
-                  if (toolCall && !toolCall.input) {
-                    // Store the input delta (we'll parse it when available)
-                    setStreamingToolCalls([...toolCalls]);
-                  }
-                } else if (parsed.type === "tool-input-available") {
-                  const toolCall = toolCalls.find(
-                    (tc) => tc.id === parsed.toolCallId
-                  );
-                  if (toolCall) {
-                    toolCall.input = parsed.input;
-                    toolCall.status = "input-available";
-                    setStreamingToolCalls([...toolCalls]);
-                  }
-                } else if (parsed.type === "tool-output-available") {
-                  const toolCall = toolCalls.find(
-                    (tc) => tc.id === parsed.toolCallId
-                  );
-                  if (toolCall) {
-                    toolCall.output = parsed.output;
-                    toolCall.status = "completed";
-                    setStreamingToolCalls([...toolCalls]);
-                  }
                 }
-                // Handle text streaming
-                else if (parsed.type === "text-delta" || parsed.delta) {
-                  const deltaText = parsed.delta?.text || parsed.delta || "";
-                  assistantText += deltaText;
-                  setStreamingMessage(assistantText);
-                } else if (parsed.type === "content" || parsed.text) {
-                  const text = parsed.text || parsed.content || "";
-                  assistantText += text;
-                  setStreamingMessage(assistantText);
+              } else if (parsed.type === "tool-output-available") {
+                const tc = toolCalls.find((t) => t.id === parsed.toolCallId);
+                if (tc) {
+                  tc.output = parsed.output;
+                  tc.status = "completed";
+                  setStreamingToolCalls([...toolCalls]);
                 }
-              } catch (e) {
-                // Skip invalid JSON
-                console.warn("Failed to parse SSE data:", data);
+              } else if (parsed.type === "text-delta" || parsed.delta) {
+                assistantText += parsed.delta?.text || parsed.delta || "";
+                setStreamingMessage(assistantText);
+              } else if (parsed.type === "content" || parsed.text) {
+                assistantText += parsed.text || parsed.content || "";
+                setStreamingMessage(assistantText);
               }
+            } catch {
+              /* skip */
             }
           }
         }
       }
 
-      // Create final assistant message
-      const assistantMessage: Message = {
-        id: generateMessageId(),
-        role: "assistant",
-        parts: [{ type: "text", text: assistantText || "I'm here to help!" }],
-        timestamp: new Date(),
-        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: generateMessageId(),
+          role: "assistant",
+          parts: [{ type: "text", text: assistantText || "I'm here to help!" }],
+          timestamp: new Date(),
+          toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        },
+      ]);
       setStreamingMessage("");
       setStreamingToolCalls([]);
     } catch (error: any) {
-      if (error.name === "AbortError") {
-        console.log("Request aborted");
-        return;
-      }
-
-      console.error("Error sending message:", error);
-      const errorMessage: Message = {
-        id: generateMessageId(),
-        role: "assistant",
-        parts: [
-          {
-            type: "text",
-            text: "Sorry, I encountered an error. Please try again.",
-          },
-        ],
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      if (error.name === "AbortError") return;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: generateMessageId(),
+          role: "assistant",
+          parts: [
+            {
+              type: "text",
+              text: "Sorry, I encountered an error. Please try again.",
+            },
+          ],
+          timestamp: new Date(),
+        },
+      ]);
       setStreamingMessage("");
       setStreamingToolCalls([]);
     } finally {
@@ -432,198 +375,221 @@ export function AgentChatDialog({
 
   if (!isOpen) return null;
 
+  const hasContent = messages.length > 0 || !!streamingMessage;
+
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
         <motion.div
-          className="relative w-full max-w-4xl h-[80vh] bg-linear-to-b from-slate-900 to-[#0a0f1e] rounded-2xl shadow-2xl border border-slate-700/50 flex flex-col overflow-hidden"
-          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          className="relative w-full max-w-3xl h-[85vh] bg-[var(--surface)] rounded-2xl shadow-2xl border border-[var(--border-strong)] flex flex-col overflow-hidden"
+          initial={{ scale: 0.92, opacity: 0, y: 24 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          exit={{ scale: 0.92, opacity: 0, y: 24 }}
+          transition={{ type: "spring", stiffness: 300, damping: 28 }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Dot Grid Background */}
-          <div className="absolute inset-0 opacity-20 pointer-events-none">
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle, #10b981 1px, transparent 1px)",
-                backgroundSize: "24px 24px",
-                opacity: 0.1,
-              }}
-            />
-          </div>
+          {/* Subtle dot grid overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.06]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, var(--foreground) 1px, transparent 1px)",
+              backgroundSize: "20px 20px",
+            }}
+          />
 
-          {/* Header */}
-          <div className="relative bg-slate-900/80 backdrop-blur-xl border-b border-slate-700/50 px-6 py-4">
+          {/* ── Header ── */}
+          <div className="relative shrink-0 border-b border-[var(--border-strong)] px-5 py-4 bg-[var(--surface)]">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <motion.div
-                  className="w-10 h-10 bg-linear-to-br from-emerald-500/30 to-emerald-600/20 rounded-xl flex items-center justify-center ring-2 ring-emerald-500/30"
-                  whileHover={{ scale: 1.1, rotate: 180 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Sparkles className="w-5 h-5 text-emerald-400" />
-                </motion.div>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-gradient-to-br from-emerald-500/25 to-emerald-600/15 rounded-xl flex items-center justify-center ring-1 ring-emerald-500/25">
+                  <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-white">
+                    <h3 className="text-base font-bold text-[var(--foreground)]">
                       AI Playground
                     </h3>
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                   </div>
-                  <p className="text-sm text-slate-400">
-                    {agent.name} • {agent.model}
+                  <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+                    {agent.name} · {agent.model}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex items-center gap-1">
                 <motion.button
-                  className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors"
-                  whileHover={{ scale: 1.1 }}
+                  className="p-2 hover:bg-[var(--surface-2)] rounded-lg transition-colors text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer"
+                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleClearChat}
                   title="Clear conversation"
                 >
-                  <RefreshCw className="w-4 h-4 text-slate-400" />
+                  <RefreshCw className="w-4 h-4" />
                 </motion.button>
                 <motion.button
-                  className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors"
-                  whileHover={{ scale: 1.1 }}
+                  className="p-2 hover:bg-[var(--surface-2)] rounded-lg transition-colors text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer"
+                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Settings className="w-4 h-4 text-slate-400" />
+                  <Settings className="w-4 h-4" />
                 </motion.button>
                 <motion.button
                   onClick={onClose}
-                  className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors group"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  className="p-2 hover:bg-red-500/10 rounded-lg transition-colors text-[var(--muted-foreground)] hover:text-red-500 cursor-pointer"
+                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <X className="w-5 h-5 text-slate-400 group-hover:text-red-400 transition-colors" />
+                  <X className="w-4 h-4" />
                 </motion.button>
               </div>
             </div>
 
-            {/* Memory Warning */}
+            {/* Memory warning */}
             {!agent.memory && (
               <motion.div
-                className="mt-4 flex items-center gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/30 rounded-lg"
-                initial={{ opacity: 0, y: -10 }}
+                className="mt-3 flex items-center gap-2.5 px-3.5 py-2.5 bg-amber-500/8 border border-amber-500/20 rounded-xl"
+                initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <span className="text-amber-400 text-xs">⚠</span>
-                </div>
-                <span className="text-sm text-amber-400">Memory disabled</span>
-                <button className="ml-auto px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs rounded-md font-medium transition-colors">
-                  Enable memory
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="text-xs text-amber-600 dark:text-amber-400 flex-1">
+                  Memory is disabled — conversation won't persist
+                </span>
+                <button className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs rounded-lg font-semibold transition-colors cursor-pointer shrink-0">
+                  Enable
                 </button>
               </motion.div>
             )}
           </div>
 
-          {/* Messages Area */}
-          <div className="relative flex-1 overflow-y-auto px-6 py-6">
-            {messages.length === 0 && !streamingMessage ? (
-              <div className="h-full flex flex-col items-center justify-center">
+          {/* ── Messages ── */}
+          <div className="relative flex-1 overflow-y-auto px-5 py-5 space-y-5">
+            {!hasContent ? (
+              /* Empty state */
+              <div className="h-full flex flex-col items-center justify-center gap-4">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 200 }}
-                  className="w-16 h-16 bg-linear-to-br from-emerald-500/20 to-emerald-600/10 rounded-2xl flex items-center justify-center mb-4"
+                  transition={{ type: "spring", stiffness: 220, delay: 0.1 }}
+                  className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 rounded-2xl flex items-center justify-center ring-1 ring-emerald-500/20"
                 >
-                  <Sparkles className="w-8 h-8 text-emerald-400" />
+                  <Sparkles className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
                 </motion.div>
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  Start a conversation with {agent.name}
-                </h3>
-                <p className="text-slate-400 text-sm text-center max-w-md">
-                  Messages will appear here
-                </p>
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-center"
+                >
+                  <h3 className="text-lg font-semibold text-[var(--foreground)] mb-1">
+                    Chat with {agent.name}
+                  </h3>
+                  <p className="text-sm text-[var(--muted-foreground)] max-w-xs">
+                    Ask anything — this agent has access to its configured tools
+                    and memory.
+                  </p>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex flex-wrap gap-2 justify-center max-w-sm"
+                >
+                  {[
+                    "What can you do?",
+                    "Show me your tools",
+                    "Help me get started",
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => setInputValue(prompt)}
+                      className="px-3 py-1.5 text-xs bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-emerald-500/40 transition-all cursor-pointer"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </motion.div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <>
                 {messages.map((message, index) => (
                   <motion.div
                     key={message.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={`flex ${
-                      message.role === "user" ? "justify-end" : "justify-start"
-                    }`}
+                    transition={{ delay: Math.min(index * 0.04, 0.3) }}
+                    className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     {message.role === "assistant" && (
-                      <div className="w-8 h-8 rounded-lg bg-linear-to-br from-emerald-500/30 to-emerald-600/20 flex items-center justify-center mr-3 shrink-0 ring-1 ring-emerald-500/30">
-                        <Sparkles className="w-4 h-4 text-emerald-400" />
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/25 to-emerald-600/15 flex items-center justify-center shrink-0 mt-0.5 ring-1 ring-emerald-500/20">
+                        <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       </div>
                     )}
-                    <div className="max-w-[70%]">
-                      {/* Tool Calls */}
+                    <div
+                      className={`max-w-[72%] ${message.role === "user" ? "items-end" : "items-start"} flex flex-col`}
+                    >
+                      {/* Tool calls */}
                       {message.role === "assistant" &&
-                        message.toolCalls &&
-                        message.toolCalls.length > 0 && (
-                          <div className="mb-3">
-                            {message.toolCalls.map((toolCall) => (
-                              <ToolCallDisplay
-                                key={toolCall.id}
-                                toolCall={toolCall}
-                                onToggle={() =>
-                                  toggleToolCall(message.id, toolCall.id)
-                                }
-                              />
-                            ))}
-                          </div>
-                        )}
+                      message.toolCalls?.length ? (
+                        <div className="w-full mb-2">
+                          {message.toolCalls.map((tc) => (
+                            <ToolCallDisplay
+                              key={tc.id}
+                              toolCall={tc}
+                              onToggle={() => toggleToolCall(message.id, tc.id)}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
 
-                      {/* Message Content */}
+                      {/* Bubble */}
                       <div
-                        className={`rounded-2xl px-5 py-3 ${
+                        className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                           message.role === "user"
-                            ? "bg-linear-to-br from-emerald-500 to-emerald-600 text-white"
-                            : "bg-slate-800/50 text-slate-100 border border-slate-700/50"
+                            ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-br-sm shadow-md shadow-emerald-500/20"
+                            : "bg-[var(--surface-2)] text-[var(--foreground)] border border-[var(--border-strong)] rounded-bl-sm"
                         }`}
                       >
                         {/* Images */}
-                        {message.images && message.images.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
+                        {message.images?.length ? (
+                          <div className="flex flex-wrap gap-2 mb-2">
                             {message.images.map((img, idx) => (
                               <img
                                 key={idx}
                                 src={img}
                                 alt={`Attachment ${idx + 1}`}
-                                className="max-w-[200px] max-h-[200px] rounded-lg object-cover border-2 border-white/10"
+                                className="max-w-[160px] max-h-[160px] rounded-lg object-cover border border-white/10"
                               />
                             ))}
                           </div>
-                        )}
+                        ) : null}
 
                         {/* Text */}
                         {message.parts.some(
-                          (p) => p.type === "text" && p.text
+                          (p) => p.type === "text" && p.text,
                         ) && (
-                          <div className="text-sm leading-relaxed">
+                          <>
                             {message.role === "assistant" ? (
                               <div
-                                className="prose prose-invert prose-sm max-w-none
-                                prose-headings:text-slate-100 prose-headings:font-bold
-                                prose-p:text-slate-200 prose-p:leading-relaxed prose-p:my-2
-                                prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline
-                                prose-strong:text-slate-100 prose-strong:font-semibold
-                                prose-code:text-emerald-400 prose-code:bg-slate-900/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
-                                prose-pre:bg-slate-900/80 prose-pre:border prose-pre:border-slate-700/50 prose-pre:rounded-lg prose-pre:my-2
-                                prose-ul:text-slate-200 prose-ul:my-2 prose-ol:text-slate-200 prose-ol:my-2
-                                prose-li:text-slate-200 prose-li:marker:text-emerald-400
-                                prose-blockquote:border-l-emerald-500 prose-blockquote:text-slate-300
-                                prose-hr:border-slate-700"
+                                className="prose prose-sm max-w-none dark:prose-invert
+                                  prose-p:my-1.5 prose-p:leading-relaxed
+                                  prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1
+                                  prose-a:text-emerald-600 dark:prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline
+                                  prose-code:text-emerald-700 dark:prose-code:text-emerald-400 prose-code:bg-emerald-500/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:before:content-none prose-code:after:content-none
+                                  prose-pre:bg-[var(--surface)] prose-pre:border prose-pre:border-[var(--border-strong)] prose-pre:rounded-xl prose-pre:my-2 prose-pre:p-3
+                                  prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5
+                                  prose-strong:font-semibold
+                                  prose-blockquote:border-l-emerald-500 prose-blockquote:text-[var(--muted-foreground)] prose-blockquote:not-italic
+                                  prose-hr:border-[var(--border)]"
                               >
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                   {message.parts.find((p) => p.type === "text")
@@ -636,15 +602,11 @@ export function AgentChatDialog({
                                   ?.text || ""}
                               </p>
                             )}
-                          </div>
+                          </>
                         )}
 
                         <p
-                          className={`text-xs mt-2 ${
-                            message.role === "user"
-                              ? "text-emerald-100/60"
-                              : "text-slate-500"
-                          }`}
+                          className={`text-[10px] mt-2 ${message.role === "user" ? "text-white/50" : "text-[var(--muted-foreground)]"}`}
                         >
                           {message.timestamp.toLocaleTimeString([], {
                             hour: "2-digit",
@@ -654,8 +616,8 @@ export function AgentChatDialog({
                       </div>
                     </div>
                     {message.role === "user" && (
-                      <div className="w-8 h-8 rounded-lg bg-linear-to-br from-slate-700 to-slate-800 flex items-center justify-center ml-3 shrink-0 ring-1 ring-slate-600">
-                        <span className="text-sm font-semibold text-slate-300">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-400/20 to-slate-500/10 border border-[var(--border-strong)] flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-[var(--muted-foreground)]">
                           U
                         </span>
                       </div>
@@ -663,52 +625,40 @@ export function AgentChatDialog({
                   </motion.div>
                 ))}
 
-                {/* Streaming message with tool calls */}
+                {/* Streaming */}
                 {(streamingMessage || streamingToolCalls.length > 0) && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex justify-start"
+                    className="flex gap-3"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-linear-to-br from-emerald-500/30 to-emerald-600/20 flex items-center justify-center mr-3 shrink-0 ring-1 ring-emerald-500/30">
-                      <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/25 to-emerald-600/15 flex items-center justify-center shrink-0 mt-0.5 ring-1 ring-emerald-500/20">
+                      <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <div className="max-w-[70%]">
-                      {/* Streaming Tool Calls */}
+                    <div className="max-w-[72%]">
                       {streamingToolCalls.length > 0 && (
-                        <div className="mb-3">
-                          {streamingToolCalls.map((toolCall) => (
+                        <div className="mb-2">
+                          {streamingToolCalls.map((tc) => (
                             <ToolCallDisplay
-                              key={toolCall.id}
-                              toolCall={toolCall}
-                              onToggle={() =>
-                                toggleStreamingToolCall(toolCall.id)
-                              }
+                              key={tc.id}
+                              toolCall={tc}
+                              onToggle={() => toggleStreamingToolCall(tc.id)}
                             />
                           ))}
                         </div>
                       )}
-
-                      {/* Streaming Text */}
                       {streamingMessage && (
-                        <div className="bg-slate-800/50 text-slate-100 border border-slate-700/50 rounded-2xl px-5 py-3">
+                        <div className="bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-2xl rounded-bl-sm px-4 py-3">
                           <div
-                            className="text-sm leading-relaxed prose prose-invert prose-sm max-w-none
-                            prose-headings:text-slate-100 prose-headings:font-bold
-                            prose-p:text-slate-200 prose-p:leading-relaxed prose-p:my-2
-                            prose-a:text-emerald-400 prose-a:no-underline hover:prose-a:underline
-                            prose-strong:text-slate-100 prose-strong:font-semibold
-                            prose-code:text-emerald-400 prose-code:bg-slate-900/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
-                            prose-pre:bg-slate-900/80 prose-pre:border prose-pre:border-slate-700/50 prose-pre:rounded-lg prose-pre:my-2
-                            prose-ul:text-slate-200 prose-ul:my-2 prose-ol:text-slate-200 prose-ol:my-2
-                            prose-li:text-slate-200 prose-li:marker:text-emerald-400
-                            prose-blockquote:border-l-emerald-500 prose-blockquote:text-slate-300
-                            prose-hr:border-slate-700"
+                            className="text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert
+                              prose-p:my-1.5 prose-a:text-emerald-600 dark:prose-a:text-emerald-400
+                              prose-code:text-emerald-700 dark:prose-code:text-emerald-400 prose-code:bg-emerald-500/10 prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
+                              prose-pre:bg-[var(--surface)] prose-pre:border prose-pre:border-[var(--border-strong)] prose-pre:rounded-xl"
                           >
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {streamingMessage}
                             </ReactMarkdown>
-                            <span className="inline-block w-2 h-4 ml-1 bg-emerald-400 animate-pulse" />
+                            <span className="inline-block w-1.5 h-4 ml-0.5 bg-emerald-500 rounded-sm animate-pulse align-middle" />
                           </div>
                         </div>
                       )}
@@ -716,41 +666,40 @@ export function AgentChatDialog({
                   </motion.div>
                 )}
 
-                {/* Loading indicator */}
+                {/* Typing indicator */}
                 {isLoading &&
                   !streamingMessage &&
                   streamingToolCalls.length === 0 && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="flex justify-start"
+                      className="flex gap-3"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-linear-to-br from-emerald-500/30 to-emerald-600/20 flex items-center justify-center mr-3 ring-1 ring-emerald-500/30">
-                        <Sparkles className="w-4 h-4 text-emerald-400" />
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/25 to-emerald-600/15 flex items-center justify-center shrink-0 mt-0.5 ring-1 ring-emerald-500/20">
+                        <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       </div>
-                      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" />
-                          <div
-                            className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"
-                            style={{ animationDelay: "0.1s" }}
-                          />
-                          <div
-                            className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"
-                            style={{ animationDelay: "0.2s" }}
-                          />
+                      <div className="bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-2xl rounded-bl-sm px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          {[0, 0.15, 0.3].map((delay, i) => (
+                            <div
+                              key={i}
+                              className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"
+                              style={{ animationDelay: `${delay}s` }}
+                            />
+                          ))}
                         </div>
                       </div>
                     </motion.div>
                   )}
+
                 <div ref={messagesEndRef} />
-              </div>
+              </>
             )}
           </div>
 
-          {/* Input Area */}
-          <div className="relative border-t border-slate-700/50 bg-slate-900/80 backdrop-blur-xl p-4">
-            {/* Image Preview */}
+          {/* ── Input ── */}
+          <div className="relative shrink-0 border-t border-[var(--border-strong)] bg-[var(--surface)] p-4">
+            {/* Image previews */}
             {selectedImages.length > 0 && (
               <div className="mb-3 flex flex-wrap gap-2">
                 {selectedImages.map((img, index) => (
@@ -763,13 +712,13 @@ export function AgentChatDialog({
                     <img
                       src={img}
                       alt={`Upload ${index + 1}`}
-                      className="w-20 h-20 object-cover rounded-lg border-2 border-slate-700/50"
+                      className="w-16 h-16 object-cover rounded-xl border border-[var(--border-strong)]"
                     />
                     <button
                       onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                     >
-                      <X className="w-4 h-4 text-white" />
+                      <X className="w-3 h-3 text-white" />
                     </button>
                   </motion.div>
                 ))}
@@ -777,7 +726,6 @@ export function AgentChatDialog({
             )}
 
             <div className="flex items-end gap-2">
-              {/* Image Upload Button */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -789,39 +737,44 @@ export function AgentChatDialog({
               <motion.button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
-                className="p-3 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 rounded-xl text-slate-400 hover:text-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title="Add images"
+                className="p-2.5 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] border border-[var(--border-strong)] rounded-xl text-[var(--muted-foreground)] hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                title="Attach image"
               >
-                <ImageIcon className="w-5 h-5" />
+                <ImageIcon className="w-4 h-4" />
               </motion.button>
 
-              <div className="flex-1 relative">
+              <div className="flex-1">
                 <input
                   ref={inputRef}
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Type a message..."
+                  placeholder={`Message ${agent.name}…`}
                   disabled={isLoading}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2.5 bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-xl text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 />
               </div>
+
               <motion.button
                 onClick={handleSendMessage}
                 disabled={
                   (!inputValue.trim() && selectedImages.length === 0) ||
                   isLoading
                 }
-                className="p-3 bg-linear-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-500/20"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="p-2.5 bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-xl text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
               >
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4" />
               </motion.button>
             </div>
+
+            <p className="text-[10px] text-[var(--muted-foreground)] text-center mt-2">
+              Press Enter to send · Shift+Enter for new line
+            </p>
           </div>
         </motion.div>
       </motion.div>

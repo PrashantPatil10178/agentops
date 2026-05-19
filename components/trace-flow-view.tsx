@@ -10,6 +10,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
 import {
   CheckCircle2,
   XCircle,
@@ -29,6 +30,7 @@ interface TraceFlowViewProps {
 
 // Custom node component for Input
 const InputNode = ({ data }: any) => {
+  const d = data.isDark;
   return (
     <motion.div
       className="relative"
@@ -36,37 +38,68 @@ const InputNode = ({ data }: any) => {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="relative bg-linear-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 border-2 border-slate-600/50 rounded-2xl p-6 min-w-[340px] shadow-2xl backdrop-blur-xl">
-        {/* Animated glow effect */}
-        <div className="absolute inset-0 bg-linear-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-xl animate-pulse" />
-
-        {/* Dot grid background */}
+      <div
+        className="relative rounded-2xl p-6 w-[clamp(15rem,24vw,20rem)] shadow-2xl backdrop-blur-xl overflow-hidden"
+        style={{
+          background: d
+            ? "linear-gradient(135deg, #0f172a 0%, rgba(59,130,246,0.08) 100%)"
+            : "linear-gradient(135deg, #ffffff 0%, rgba(59,130,246,0.05) 100%)",
+          border: `2px solid ${d ? "rgba(59,130,246,0.35)" : "rgba(59,130,246,0.3)"}`,
+          boxShadow: d
+            ? "0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(59,130,246,0.1)"
+            : "0 4px 24px rgba(0,0,0,0.08), 0 0 16px rgba(59,130,246,0.08)",
+        }}
+      >
+        {/* Subtle glow */}
         <div
-          className="absolute inset-0 opacity-20 pointer-events-none rounded-2xl"
+          className="absolute inset-0 rounded-2xl pointer-events-none"
           style={{
-            backgroundImage:
-              "radial-gradient(circle, #3b82f6 1.5px, transparent 1.5px)",
-            backgroundSize: "24px 24px",
+            background: d
+              ? "radial-gradient(ellipse at top left, rgba(59,130,246,0.12) 0%, transparent 60%)"
+              : "radial-gradient(ellipse at top left, rgba(59,130,246,0.06) 0%, transparent 60%)",
           }}
         />
 
         <div className="relative">
           {/* Header */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2.5 bg-linear-to-br from-blue-500/20 to-blue-600/10 rounded-xl ring-2 ring-blue-500/30">
-              <MessageSquare className="w-5 h-5 text-blue-400" />
+            <div
+              className="p-2.5 rounded-xl"
+              style={{
+                background: "rgba(59,130,246,0.15)",
+                border: "1px solid rgba(59,130,246,0.3)",
+              }}
+            >
+              <MessageSquare className="w-5 h-5 text-blue-500" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+              <h4
+                className="text-sm font-bold uppercase tracking-wider"
+                style={{ color: d ? "#f8fafc" : "#0f172a" }}
+              >
                 User Input
               </h4>
-              <p className="text-xs text-slate-400 mt-0.5">Initial Request</p>
+              <p
+                className="text-xs mt-0.5"
+                style={{ color: d ? "#94a3b8" : "#64748b" }}
+              >
+                Initial Request
+              </p>
             </div>
           </div>
 
           {/* Content */}
-          <div className="mt-4 p-4 bg-slate-950/50 rounded-xl border border-slate-700/50">
-            <p className="text-sm text-slate-300 leading-relaxed line-clamp-4">
+          <div
+            className="mt-4 p-4 rounded-xl"
+            style={{
+              background: d ? "rgba(15,23,42,0.6)" : "rgba(241,245,249,0.8)",
+              border: `1px solid ${d ? "rgba(71,85,105,0.4)" : "rgba(203,213,225,0.6)"}`,
+            }}
+          >
+            <p
+              className="text-sm leading-relaxed line-clamp-4"
+              style={{ color: d ? "#cbd5e1" : "#475569" }}
+            >
               {data.text || "No input provided"}
             </p>
           </div>
@@ -78,10 +111,12 @@ const InputNode = ({ data }: any) => {
 
 // Custom node component for Agent
 const AgentNodeFlow = ({ data }: any) => {
+  const d = data.isDark;
+
   const getStatusIcon = (status: string) => {
     if (status === "success")
-      return <CheckCircle2 className="w-5 h-5 text-emerald-400" />;
-    if (status === "error") return <XCircle className="w-5 h-5 text-red-400" />;
+      return <CheckCircle2 className="w-5 h-5 text-emerald-500" />;
+    if (status === "error") return <XCircle className="w-5 h-5 text-red-500" />;
     return <Circle className="w-5 h-5 text-slate-400" />;
   };
 
@@ -92,17 +127,34 @@ const AgentNodeFlow = ({ data }: any) => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
-      <div className="relative bg-linear-to-br from-emerald-950/90 via-emerald-900/80 to-emerald-950/90 border-2 border-emerald-500/50 rounded-2xl p-6 min-w-[380px] shadow-2xl backdrop-blur-xl">
-        {/* Animated glow effect */}
-        <div className="absolute inset-0 bg-linear-to-r from-emerald-500/20 via-emerald-400/20 to-emerald-500/20 rounded-2xl blur-xl animate-pulse" />
-
-        {/* Dot grid background */}
+      <div
+        className="relative rounded-2xl p-6 w-[clamp(17rem,26vw,22rem)] shadow-2xl backdrop-blur-xl overflow-hidden"
+        style={{
+          background: d
+            ? "linear-gradient(135deg, #0f172a 0%, rgba(16,185,129,0.08) 100%)"
+            : "linear-gradient(135deg, #ffffff 0%, rgba(16,185,129,0.05) 100%)",
+          border: `2px solid ${d ? "rgba(16,185,129,0.4)" : "rgba(16,185,129,0.35)"}`,
+          boxShadow: d
+            ? "0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(16,185,129,0.12)"
+            : "0 4px 24px rgba(0,0,0,0.08), 0 0 16px rgba(16,185,129,0.1)",
+        }}
+      >
+        {/* Top accent bar */}
         <div
-          className="absolute inset-0 opacity-20 pointer-events-none rounded-2xl"
+          className="absolute top-0 left-0 right-0 h-0.5"
           style={{
-            backgroundImage:
-              "radial-gradient(circle, #10b981 1.5px, transparent 1.5px)",
-            backgroundSize: "24px 24px",
+            background:
+              "linear-gradient(90deg, transparent, #10b981, transparent)",
+          }}
+        />
+
+        {/* Subtle glow */}
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          style={{
+            background: d
+              ? "radial-gradient(ellipse at top, rgba(16,185,129,0.1) 0%, transparent 60%)"
+              : "radial-gradient(ellipse at top, rgba(16,185,129,0.06) 0%, transparent 60%)",
           }}
         />
 
@@ -110,35 +162,70 @@ const AgentNodeFlow = ({ data }: any) => {
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-linear-to-br from-emerald-500/30 to-emerald-600/20 rounded-xl ring-2 ring-emerald-500/40 shadow-lg">
-                <Sparkles className="w-6 h-6 text-emerald-400" />
+              <div
+                className="p-3 rounded-xl"
+                style={{
+                  background: "rgba(16,185,129,0.15)",
+                  border: "1px solid rgba(16,185,129,0.3)",
+                }}
+              >
+                <Sparkles className="w-6 h-6 text-emerald-500" />
               </div>
               <div>
-                <h4 className="text-base font-bold text-white uppercase tracking-wider">
+                <h4
+                  className="text-base font-bold uppercase tracking-wider"
+                  style={{ color: d ? "#f8fafc" : "#0f172a" }}
+                >
                   {data.name || "Agent"}
                 </h4>
-                <p className="text-xs text-emerald-400 mt-0.5 font-medium">
+                <p
+                  className="text-xs mt-0.5 font-medium"
+                  style={{ color: "#10b981" }}
+                >
                   AI Agent Processor
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
+            <div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+              style={{
+                background: "rgba(16,185,129,0.1)",
+                border: "1px solid rgba(16,185,129,0.25)",
+              }}
+            >
               {getStatusIcon(data.status)}
-              <span className="text-xs font-semibold text-emerald-300 capitalize">
+              <span
+                className="text-xs font-semibold capitalize"
+                style={{ color: d ? "#6ee7b7" : "#059669" }}
+              >
                 {data.status || "running"}
               </span>
             </div>
           </div>
 
-          {/* Details Grid */}
+          {/* Details */}
           <div className="space-y-3">
             {data.model && (
-              <div className="p-3 bg-slate-950/50 rounded-xl border border-slate-700/50">
+              <div
+                className="p-3 rounded-xl"
+                style={{
+                  background: d
+                    ? "rgba(15,23,42,0.6)"
+                    : "rgba(241,245,249,0.8)",
+                  border: `1px solid ${d ? "rgba(71,85,105,0.4)" : "rgba(203,213,225,0.6)"}`,
+                }}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400 font-semibold uppercase tracking-wide">
+                  <span
+                    className="text-xs font-semibold uppercase tracking-wide"
+                    style={{ color: d ? "#94a3b8" : "#64748b" }}
+                  >
                     Model
                   </span>
-                  <span className="text-sm text-white font-mono font-medium">
+                  <span
+                    className="text-sm font-mono font-medium"
+                    style={{ color: d ? "#f1f5f9" : "#0f172a" }}
+                  >
                     {data.model}
                   </span>
                 </div>
@@ -146,11 +233,25 @@ const AgentNodeFlow = ({ data }: any) => {
             )}
 
             {data.instructions && (
-              <div className="p-3 bg-slate-950/50 rounded-xl border border-slate-700/50">
-                <span className="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-2">
+              <div
+                className="p-3 rounded-xl"
+                style={{
+                  background: d
+                    ? "rgba(15,23,42,0.6)"
+                    : "rgba(241,245,249,0.8)",
+                  border: `1px solid ${d ? "rgba(71,85,105,0.4)" : "rgba(203,213,225,0.6)"}`,
+                }}
+              >
+                <span
+                  className="text-xs font-semibold uppercase tracking-wide block mb-2"
+                  style={{ color: d ? "#94a3b8" : "#64748b" }}
+                >
                   Instructions
                 </span>
-                <p className="text-sm text-slate-300 leading-relaxed line-clamp-3">
+                <p
+                  className="text-sm leading-relaxed line-clamp-3"
+                  style={{ color: d ? "#cbd5e1" : "#475569" }}
+                >
                   {data.instructions}
                 </p>
               </div>
@@ -159,21 +260,49 @@ const AgentNodeFlow = ({ data }: any) => {
             {(data.maxSteps || data.temperature !== undefined) && (
               <div className="grid grid-cols-2 gap-3">
                 {data.maxSteps && (
-                  <div className="p-3 bg-slate-950/50 rounded-xl border border-slate-700/50">
-                    <span className="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1">
+                  <div
+                    className="p-3 rounded-xl"
+                    style={{
+                      background: d
+                        ? "rgba(15,23,42,0.6)"
+                        : "rgba(241,245,249,0.8)",
+                      border: `1px solid ${d ? "rgba(71,85,105,0.4)" : "rgba(203,213,225,0.6)"}`,
+                    }}
+                  >
+                    <span
+                      className="text-xs font-semibold uppercase tracking-wide block mb-1"
+                      style={{ color: d ? "#94a3b8" : "#64748b" }}
+                    >
                       Max Steps
                     </span>
-                    <span className="text-lg text-white font-bold">
+                    <span
+                      className="text-lg font-bold"
+                      style={{ color: d ? "#f1f5f9" : "#0f172a" }}
+                    >
                       {data.maxSteps}
                     </span>
                   </div>
                 )}
                 {data.temperature !== undefined && (
-                  <div className="p-3 bg-slate-950/50 rounded-xl border border-slate-700/50">
-                    <span className="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-1">
+                  <div
+                    className="p-3 rounded-xl"
+                    style={{
+                      background: d
+                        ? "rgba(15,23,42,0.6)"
+                        : "rgba(241,245,249,0.8)",
+                      border: `1px solid ${d ? "rgba(71,85,105,0.4)" : "rgba(203,213,225,0.6)"}`,
+                    }}
+                  >
+                    <span
+                      className="text-xs font-semibold uppercase tracking-wide block mb-1"
+                      style={{ color: d ? "#94a3b8" : "#64748b" }}
+                    >
                       Temperature
                     </span>
-                    <span className="text-lg text-white font-bold">
+                    <span
+                      className="text-lg font-bold"
+                      style={{ color: d ? "#f1f5f9" : "#0f172a" }}
+                    >
                       {data.temperature}
                     </span>
                   </div>
@@ -189,6 +318,8 @@ const AgentNodeFlow = ({ data }: any) => {
 
 // Custom node component for Tool
 const ToolNodeFlow = ({ data }: any) => {
+  const d = data.isDark;
+
   const formatJSON = (obj: any) => {
     if (!obj) return "N/A";
     try {
@@ -206,36 +337,70 @@ const ToolNodeFlow = ({ data }: any) => {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: 0.3 }}
     >
-      <div className="relative bg-linear-to-br from-blue-950/90 via-blue-900/80 to-blue-950/90 border-2 border-blue-500/50 rounded-2xl p-6 min-w-[360px] shadow-2xl backdrop-blur-xl">
-        {/* Animated glow effect */}
-        <div className="absolute inset-0 bg-linear-to-r from-blue-500/20 via-cyan-500/20 to-blue-500/20 rounded-2xl blur-xl animate-pulse" />
-
-        {/* Dot grid background */}
+      <div
+        className="relative rounded-2xl p-6 w-[clamp(16rem,25vw,21rem)] shadow-2xl backdrop-blur-xl overflow-hidden"
+        style={{
+          background: d
+            ? "linear-gradient(135deg, #0f172a 0%, rgba(59,130,246,0.08) 100%)"
+            : "linear-gradient(135deg, #f0f4ff 0%, rgba(59,130,246,0.04) 100%)",
+          border: `2px solid ${d ? "rgba(59,130,246,0.35)" : "rgba(59,130,246,0.3)"}`,
+          boxShadow: d
+            ? "0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(59,130,246,0.1)"
+            : "0 4px 24px rgba(0,0,0,0.08)",
+        }}
+      >
+        {/* Left accent line */}
         <div
-          className="absolute inset-0 opacity-20 pointer-events-none rounded-2xl"
+          className="absolute left-0 top-4 bottom-4 w-0.5 rounded-full"
           style={{
-            backgroundImage:
-              "radial-gradient(circle, #3b82f6 1.5px, transparent 1.5px)",
-            backgroundSize: "24px 24px",
+            background:
+              "linear-gradient(180deg, transparent, #3b82f6, transparent)",
           }}
         />
 
-        <div className="relative">
+        {/* Subtle glow */}
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          style={{
+            background: d
+              ? "radial-gradient(ellipse at top right, rgba(59,130,246,0.1) 0%, transparent 60%)"
+              : "radial-gradient(ellipse at top right, rgba(59,130,246,0.06) 0%, transparent 60%)",
+          }}
+        />
+
+        <div className="relative pl-2">
           {/* Header */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2.5 bg-linear-to-br from-blue-500/30 to-blue-600/20 rounded-xl ring-2 ring-blue-500/40">
-              <Zap className="w-5 h-5 text-blue-400" />
+            <div
+              className="p-2.5 rounded-xl"
+              style={{
+                background: "rgba(59,130,246,0.15)",
+                border: "1px solid rgba(59,130,246,0.3)",
+              }}
+            >
+              <Zap className="w-5 h-5 text-blue-500" />
             </div>
             <div className="flex-1">
-              <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+              <h4
+                className="text-sm font-bold uppercase tracking-wider"
+                style={{ color: d ? "#f8fafc" : "#0f172a" }}
+              >
                 {data.name || "Tool"}
               </h4>
-              <p className="text-xs text-blue-400 mt-0.5">Tool Execution</p>
+              <p className="text-xs mt-0.5" style={{ color: "#3b82f6" }}>
+                Tool Execution
+              </p>
             </div>
             {data.duration && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/20 border border-blue-500/30 rounded-lg">
-                <Clock className="w-3.5 h-3.5 text-blue-300" />
-                <span className="text-xs font-mono text-blue-200 font-semibold">
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                style={{
+                  background: "rgba(59,130,246,0.1)",
+                  border: "1px solid rgba(59,130,246,0.25)",
+                }}
+              >
+                <Clock className="w-3.5 h-3.5 text-blue-400" />
+                <span className="text-xs font-mono font-semibold text-blue-400">
                   {data.duration}
                 </span>
               </div>
@@ -246,13 +411,30 @@ const ToolNodeFlow = ({ data }: any) => {
           {data.input && (
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-2">
-                <ArrowRight className="w-4 h-4 text-slate-400" />
-                <span className="text-xs text-slate-400 font-semibold uppercase tracking-wide">
+                <ArrowRight
+                  className="w-4 h-4"
+                  style={{ color: d ? "#94a3b8" : "#64748b" }}
+                />
+                <span
+                  className="text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: d ? "#94a3b8" : "#64748b" }}
+                >
                   Input
                 </span>
               </div>
-              <div className="p-3 bg-slate-950/70 rounded-xl border border-slate-700/50 max-h-32 overflow-y-auto">
-                <pre className="text-xs text-blue-300 font-mono leading-relaxed whitespace-pre-wrap">
+              <div
+                className="p-3 rounded-xl max-h-32 overflow-y-auto"
+                style={{
+                  background: d
+                    ? "rgba(15,23,42,0.7)"
+                    : "rgba(239,246,255,0.8)",
+                  border: `1px solid ${d ? "rgba(71,85,105,0.4)" : "rgba(147,197,253,0.4)"}`,
+                }}
+              >
+                <pre
+                  className="text-xs font-mono leading-relaxed whitespace-pre-wrap"
+                  style={{ color: d ? "#93c5fd" : "#1d4ed8" }}
+                >
                   {formatJSON(data.input)}
                 </pre>
               </div>
@@ -263,13 +445,30 @@ const ToolNodeFlow = ({ data }: any) => {
           {data.output && (
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <ArrowRight className="w-4 h-4 text-emerald-400 rotate-180" />
-                <span className="text-xs text-slate-400 font-semibold uppercase tracking-wide">
+                <ArrowRight
+                  className="w-4 h-4 rotate-180"
+                  style={{ color: "#10b981" }}
+                />
+                <span
+                  className="text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: d ? "#94a3b8" : "#64748b" }}
+                >
                   Output
                 </span>
               </div>
-              <div className="p-3 bg-slate-950/70 rounded-xl border border-emerald-700/30 max-h-32 overflow-y-auto">
-                <pre className="text-xs text-emerald-300 font-mono leading-relaxed whitespace-pre-wrap">
+              <div
+                className="p-3 rounded-xl max-h-32 overflow-y-auto"
+                style={{
+                  background: d
+                    ? "rgba(15,23,42,0.7)"
+                    : "rgba(240,253,244,0.8)",
+                  border: `1px solid ${d ? "rgba(16,185,129,0.25)" : "rgba(110,231,183,0.4)"}`,
+                }}
+              >
+                <pre
+                  className="text-xs font-mono leading-relaxed whitespace-pre-wrap"
+                  style={{ color: d ? "#6ee7b7" : "#065f46" }}
+                >
                   {formatJSON(data.output)}
                 </pre>
               </div>
@@ -283,12 +482,23 @@ const ToolNodeFlow = ({ data }: any) => {
 
 // Custom node component for Output
 const OutputNode = ({ data }: any) => {
+  const d = data.isDark;
+
   const getStatusBadge = (status: string) => {
     if (status === "success") {
       return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-lg">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-semibold text-emerald-300">
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+          style={{
+            background: "rgba(16,185,129,0.1)",
+            border: "1px solid rgba(16,185,129,0.3)",
+          }}
+        >
+          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          <span
+            className="text-xs font-semibold"
+            style={{ color: d ? "#6ee7b7" : "#059669" }}
+          >
             Success
           </span>
         </div>
@@ -296,9 +506,20 @@ const OutputNode = ({ data }: any) => {
     }
     if (status === "error") {
       return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 border border-red-500/40 rounded-lg">
-          <XCircle className="w-4 h-4 text-red-400" />
-          <span className="text-xs font-semibold text-red-300">Error</span>
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+          style={{
+            background: "rgba(239,68,68,0.1)",
+            border: "1px solid rgba(239,68,68,0.3)",
+          }}
+        >
+          <XCircle className="w-4 h-4 text-red-500" />
+          <span
+            className="text-xs font-semibold"
+            style={{ color: d ? "#fca5a5" : "#dc2626" }}
+          >
+            Error
+          </span>
         </div>
       );
     }
@@ -312,17 +533,34 @@ const OutputNode = ({ data }: any) => {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: 0.4 }}
     >
-      <div className="relative bg-linear-to-br from-emerald-950/90 via-emerald-900/80 to-emerald-950/90 border-2 border-emerald-500/50 rounded-2xl p-6 min-w-[340px] shadow-2xl backdrop-blur-xl">
-        {/* Animated glow effect */}
-        <div className="absolute inset-0 bg-linear-to-r from-emerald-500/20 via-green-500/20 to-emerald-500/20 rounded-2xl blur-xl animate-pulse" />
-
-        {/* Dot grid background */}
+      <div
+        className="relative rounded-2xl p-6 w-[clamp(15rem,24vw,20rem)] shadow-2xl backdrop-blur-xl overflow-hidden"
+        style={{
+          background: d
+            ? "linear-gradient(135deg, #0f172a 0%, rgba(16,185,129,0.08) 100%)"
+            : "linear-gradient(135deg, #ffffff 0%, rgba(16,185,129,0.05) 100%)",
+          border: `2px solid ${d ? "rgba(16,185,129,0.4)" : "rgba(16,185,129,0.35)"}`,
+          boxShadow: d
+            ? "0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(16,185,129,0.12)"
+            : "0 4px 24px rgba(0,0,0,0.08), 0 0 16px rgba(16,185,129,0.1)",
+        }}
+      >
+        {/* Top accent bar */}
         <div
-          className="absolute inset-0 opacity-20 pointer-events-none rounded-2xl"
+          className="absolute top-0 left-0 right-0 h-0.5"
           style={{
-            backgroundImage:
-              "radial-gradient(circle, #10b981 1.5px, transparent 1.5px)",
-            backgroundSize: "24px 24px",
+            background:
+              "linear-gradient(90deg, transparent, #10b981, transparent)",
+          }}
+        />
+
+        {/* Subtle glow */}
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          style={{
+            background: d
+              ? "radial-gradient(ellipse at bottom right, rgba(16,185,129,0.1) 0%, transparent 60%)"
+              : "radial-gradient(ellipse at bottom right, rgba(16,185,129,0.06) 0%, transparent 60%)",
           }}
         />
 
@@ -330,14 +568,23 @@ const OutputNode = ({ data }: any) => {
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-linear-to-br from-emerald-500/30 to-emerald-600/20 rounded-xl ring-2 ring-emerald-500/40">
-                <Layers className="w-5 h-5 text-emerald-400" />
+              <div
+                className="p-2.5 rounded-xl"
+                style={{
+                  background: "rgba(16,185,129,0.15)",
+                  border: "1px solid rgba(16,185,129,0.3)",
+                }}
+              >
+                <Layers className="w-5 h-5 text-emerald-500" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+                <h4
+                  className="text-sm font-bold uppercase tracking-wider"
+                  style={{ color: d ? "#f8fafc" : "#0f172a" }}
+                >
                   Final Output
                 </h4>
-                <p className="text-xs text-emerald-400 mt-0.5">
+                <p className="text-xs mt-0.5" style={{ color: "#10b981" }}>
                   Agent Response
                 </p>
               </div>
@@ -346,8 +593,17 @@ const OutputNode = ({ data }: any) => {
           </div>
 
           {/* Content */}
-          <div className="p-4 bg-slate-950/50 rounded-xl border border-emerald-700/30 max-h-48 overflow-y-auto">
-            <p className="text-sm text-slate-200 leading-relaxed">
+          <div
+            className="p-4 rounded-xl max-h-48 overflow-y-auto"
+            style={{
+              background: d ? "rgba(15,23,42,0.6)" : "rgba(241,245,249,0.8)",
+              border: `1px solid ${d ? "rgba(16,185,129,0.2)" : "rgba(110,231,183,0.4)"}`,
+            }}
+          >
+            <p
+              className="text-sm leading-relaxed"
+              style={{ color: d ? "#e2e8f0" : "#1e293b" }}
+            >
               {data.text || "No output"}
             </p>
           </div>
@@ -365,6 +621,16 @@ const nodeTypes = {
 };
 
 export function TraceFlowView({ trace }: TraceFlowViewProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  const flowBg = "var(--background)";
+  const gridColor = isDark
+    ? "rgba(100,116,139,0.35)"
+    : "rgba(148,163,184,0.48)";
+  const labelBg = "color-mix(in oklch, var(--surface) 94%, transparent)";
+  const labelFill = "var(--muted-foreground)";
+
   const { nodes, edges } = useMemo(() => {
     if (!trace || !trace.tree || trace.tree.length === 0) {
       return { nodes: [], edges: [] };
@@ -376,7 +642,6 @@ export function TraceFlowView({ trace }: TraceFlowViewProps) {
     const mainSpan = trace.tree[0];
     const attrs = mainSpan.attributes;
 
-    // Extract data
     const inputText =
       attrs["input"] &&
       Array.isArray(attrs["input"]) &&
@@ -392,19 +657,52 @@ export function TraceFlowView({ trace }: TraceFlowViewProps) {
     const maxSteps = attrs["ai.agent.max_steps"];
     const temperature = attrs["ai.settings.temperature"];
 
+    // ── Vertical-centering calculations ─────────────────────────────────────
+    // Estimated rendered heights (px) and fixed column X positions
+    const TOOL_H = 250; // ToolNodeFlow estimated height
+    const TOOL_GAP = 44; // gap between tool cards
+    const AGENT_H = 340; // AgentNodeFlow estimated height
+    const INPUT_H = 270; // InputNode estimated height
+    const OUTPUT_H = 285; // OutputNode estimated height
+    const TOP_PAD = 60; // top/bottom viewport padding
+    const INPUT_W = 320;
+    const AGENT_W = 360;
+    const TOOL_W = 340;
+    const H_GAP = 92;
+
+    const toolSpans = mainSpan.children || [];
+    const toolSpanH =
+      toolSpans.length > 0
+        ? toolSpans.length * TOOL_H + (toolSpans.length - 1) * TOOL_GAP
+        : 0;
+    const maxH = Math.max(AGENT_H, toolSpanH);
+    const centerY = TOP_PAD + maxH / 2;
+
+    // Each column x (width estimates + controlled gap)
+    const inputX = 0;
+    const agentX = inputX + INPUT_W + H_GAP;
+    const toolX = agentX + AGENT_W + H_GAP;
+    const outputX = toolX + TOOL_W + H_GAP;
+
+    // Y positions — all centered around `centerY`
+    const inputY = centerY - INPUT_H / 2;
+    const agentY = centerY - AGENT_H / 2;
+    const toolsY = centerY - toolSpanH / 2;
+    const outputY = centerY - OUTPUT_H / 2;
+
     // Input Node
     nodes.push({
       id: "input",
       type: "input",
-      position: { x: 0, y: 150 },
-      data: { text: inputText },
+      position: { x: inputX, y: inputY },
+      data: { text: inputText, isDark },
     });
 
     // Agent Node
     nodes.push({
       id: "agent",
       type: "agent",
-      position: { x: 500, y: 100 },
+      position: { x: agentX, y: agentY },
       data: {
         name: attrs["entity.id"] || "Agent",
         status: agentState,
@@ -412,187 +710,138 @@ export function TraceFlowView({ trace }: TraceFlowViewProps) {
         instructions,
         maxSteps,
         temperature,
+        isDark,
       },
     });
 
-    // Edge from input to agent
+    // Edge: input → agent
     edges.push({
       id: "edge-input-agent",
       source: "input",
       target: "agent",
-      type: "smoothstep",
+      type: "default", // bezier — elegant single edge
       animated: true,
-      style: {
-        stroke: "#3b82f6",
-        strokeWidth: 3,
-      },
+      style: { stroke: "#3b82f6", strokeWidth: 2.5 },
       markerEnd: {
         type: "arrowclosed",
         color: "#3b82f6",
-        width: 20,
-        height: 20,
+        width: 16,
+        height: 16,
       },
       label: "Request",
-      labelStyle: {
-        fill: "#94a3b8",
-        fontWeight: 600,
-        fontSize: 11,
-      },
-      labelBgStyle: {
-        fill: "rgba(15, 23, 42, 0.95)",
-        fillOpacity: 0.9,
-      },
+      labelStyle: { fill: labelFill, fontWeight: 600, fontSize: 11 },
+      labelBgStyle: { fill: labelBg, fillOpacity: 0.95 },
       labelBgPadding: [8, 4],
-      labelBgBorderRadius: 4,
+      labelBgBorderRadius: 6,
     });
 
-    // Tool Nodes
-    const toolSpans = mainSpan.children || [];
-    let toolYOffset = 50;
-    toolSpans.forEach((toolSpan, index) => {
+    // Tool Nodes + edges
+    toolSpans.forEach((toolSpan: any, index: number) => {
       const toolAttrs = toolSpan.attributes;
       const toolName = toolAttrs["tool.name"] || `Tool ${index + 1}`;
       const toolInput = toolAttrs["input"];
       const toolOutput = toolAttrs["output"];
       const duration =
         toolSpan.endTime && toolSpan.startTime
-          ? `${(
-              (new Date(toolSpan.endTime).getTime() -
-                new Date(toolSpan.startTime).getTime()) /
-              1000
-            ).toFixed(2)}s`
+          ? `${((new Date(toolSpan.endTime).getTime() - new Date(toolSpan.startTime).getTime()) / 1000).toFixed(2)}s`
           : undefined;
 
+      const toolY = toolsY + index * (TOOL_H + TOOL_GAP);
       nodes.push({
         id: `tool-${index}`,
         type: "tool",
-        position: { x: 1050, y: toolYOffset },
+        position: { x: toolX, y: toolY },
         data: {
           name: toolName,
           input: toolInput,
           output: toolOutput,
           duration,
+          isDark,
         },
       });
 
-      // Edge from agent to tool
       edges.push({
         id: `edge-agent-tool-${index}`,
         source: "agent",
         target: `tool-${index}`,
         type: "smoothstep",
-        animated: true,
-        style: {
-          stroke: "#6366f1",
-          strokeWidth: 3,
-        },
+        animated: false,
+        style: { stroke: "#6366f1", strokeWidth: 2 },
         markerEnd: {
           type: "arrowclosed",
           color: "#6366f1",
-          width: 20,
-          height: 20,
+          width: 14,
+          height: 14,
         },
         label: `Call ${index + 1}`,
-        labelStyle: {
-          fill: "#94a3b8",
-          fontWeight: 600,
-          fontSize: 11,
-        },
-        labelBgStyle: {
-          fill: "rgba(15, 23, 42, 0.95)",
-          fillOpacity: 0.9,
-        },
-        labelBgPadding: [8, 4],
-        labelBgBorderRadius: 4,
+        labelStyle: { fill: labelFill, fontWeight: 600, fontSize: 10 },
+        labelBgStyle: { fill: labelBg, fillOpacity: 0.95 },
+        labelBgPadding: [6, 3],
+        labelBgBorderRadius: 6,
       });
-
-      toolYOffset += 250;
     });
 
     // Output Node
-    const outputYPosition = toolSpans.length > 0 ? toolYOffset - 100 : 150;
     nodes.push({
       id: "output",
       type: "output",
-      position: { x: 1600, y: outputYPosition },
-      data: {
-        text: outputText,
-        status: agentState,
-      },
+      position: { x: outputX, y: outputY },
+      data: { text: outputText, status: agentState, isDark },
     });
 
-    // Edge from last tool to output, or from agent to output if no tools
+    // Final edge: last-tool → output, or agent → output if no tools
     if (toolSpans.length > 0) {
       edges.push({
-        id: `edge-tool-output`,
+        id: "edge-tool-output",
         source: `tool-${toolSpans.length - 1}`,
         target: "output",
-        type: "smoothstep",
+        type: "default", // bezier for the final delivery edge
         animated: true,
-        style: {
-          stroke: "#10b981",
-          strokeWidth: 3,
-        },
+        style: { stroke: "#10b981", strokeWidth: 2.5 },
         markerEnd: {
           type: "arrowclosed",
           color: "#10b981",
-          width: 20,
-          height: 20,
+          width: 16,
+          height: 16,
         },
         label: "Response",
-        labelStyle: {
-          fill: "#94a3b8",
-          fontWeight: 600,
-          fontSize: 11,
-        },
-        labelBgStyle: {
-          fill: "rgba(15, 23, 42, 0.95)",
-          fillOpacity: 0.9,
-        },
+        labelStyle: { fill: labelFill, fontWeight: 600, fontSize: 11 },
+        labelBgStyle: { fill: labelBg, fillOpacity: 0.95 },
         labelBgPadding: [8, 4],
-        labelBgBorderRadius: 4,
+        labelBgBorderRadius: 6,
       });
     } else {
       edges.push({
         id: "edge-agent-output",
         source: "agent",
         target: "output",
-        type: "smoothstep",
+        type: "default",
         animated: true,
-        style: {
-          stroke: "#10b981",
-          strokeWidth: 3,
-        },
+        style: { stroke: "#10b981", strokeWidth: 2.5 },
         markerEnd: {
           type: "arrowclosed",
           color: "#10b981",
-          width: 20,
-          height: 20,
+          width: 16,
+          height: 16,
         },
         label: "Response",
-        labelStyle: {
-          fill: "#94a3b8",
-          fontWeight: 600,
-          fontSize: 11,
-        },
-        labelBgStyle: {
-          fill: "rgba(15, 23, 42, 0.95)",
-          fillOpacity: 0.9,
-        },
+        labelStyle: { fill: labelFill, fontWeight: 600, fontSize: 11 },
+        labelBgStyle: { fill: labelBg, fillOpacity: 0.95 },
         labelBgPadding: [8, 4],
-        labelBgBorderRadius: 4,
+        labelBgBorderRadius: 6,
       });
     }
 
     return { nodes, edges };
-  }, [trace]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trace, isDark]);
 
   if (!trace) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="text-center">
-          <Layers className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400 text-sm">
+          <Layers className="w-16 h-16 text-(--muted-foreground) mx-auto mb-4" />
+          <p className="text-(--muted-foreground) text-sm">
             Select a trace to view execution flow
           </p>
         </div>
@@ -604,33 +853,32 @@ export function TraceFlowView({ trace }: TraceFlowViewProps) {
     <div className="w-full h-full">
       <style jsx global>{`
         .react-flow__controls {
-          box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
+          box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+          border-radius: 12px !important;
+          overflow: hidden;
+          border: 1px solid var(--border-strong) !important;
         }
 
         .react-flow__controls-button {
-          background: linear-gradient(
-            135deg,
-            rgba(15, 23, 42, 0.95) 0%,
-            rgba(30, 41, 59, 0.9) 100%
+          background: color-mix(
+            in oklch,
+            var(--surface) 94%,
+            transparent
           ) !important;
           border: none !important;
-          border-bottom: 1px solid rgba(71, 85, 105, 0.3) !important;
+          border-bottom: 1px solid var(--border) !important;
           transition: all 0.2s ease !important;
-          color: rgba(148, 163, 184, 0.9) !important;
+          color: var(--muted-foreground) !important;
         }
 
         .react-flow__controls-button:hover {
-          background: linear-gradient(
-            135deg,
-            rgba(16, 185, 129, 0.15) 0%,
-            rgba(5, 150, 105, 0.1) 100%
+          background: color-mix(
+            in oklch,
+            var(--primary) 10%,
+            var(--surface)
           ) !important;
-          color: rgba(16, 185, 129, 1) !important;
+          color: var(--primary) !important;
           transform: scale(1.05);
-        }
-
-        .react-flow__controls-button:hover svg {
-          color: rgba(16, 185, 129, 1) !important;
         }
 
         .react-flow__controls-button svg {
@@ -639,13 +887,15 @@ export function TraceFlowView({ trace }: TraceFlowViewProps) {
         }
 
         .react-flow__minimap {
-          box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
+          border-radius: 12px !important;
+          overflow: hidden;
+          border: 1px solid var(--border-strong) !important;
+          box-shadow: 0 0 20px rgba(16, 185, 129, 0.1) !important;
         }
 
-        /* Enhanced Edge Styling */
         .react-flow__edge-path {
           stroke-width: 3 !important;
-          filter: drop-shadow(0 0 8px currentColor);
+          filter: drop-shadow(0 0 6px currentColor);
         }
 
         .react-flow__edge.animated path {
@@ -659,31 +909,19 @@ export function TraceFlowView({ trace }: TraceFlowViewProps) {
           }
         }
 
-        .react-flow__edge .react-flow__edge-path {
-          transition: stroke 0.3s ease, stroke-width 0.3s ease;
-        }
-
         .react-flow__edge:hover .react-flow__edge-path {
           stroke-width: 4 !important;
-          filter: drop-shadow(0 0 12px currentColor);
+          filter: drop-shadow(0 0 10px currentColor);
         }
 
-        /* Connection line animation */
-        .react-flow__connectionline {
-          stroke-width: 3;
-          stroke-dasharray: 5;
-          animation: dashdraw 0.5s linear infinite;
-        }
-
-        /* Edge label styling */
         .react-flow__edge-text {
-          fill: rgba(148, 163, 184, 0.9);
+          fill: var(--muted-foreground);
           font-size: 10px;
           font-weight: 600;
         }
 
         .react-flow__edge-textbg {
-          fill: rgba(15, 23, 42, 0.95);
+          fill: color-mix(in oklch, var(--surface) 94%, transparent);
           rx: 4;
         }
       `}</style>
@@ -692,35 +930,32 @@ export function TraceFlowView({ trace }: TraceFlowViewProps) {
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        className="bg-[#0a0f1e]"
-        minZoom={0.5}
+        fitViewOptions={{ padding: 0.22, duration: 500 }}
+        style={{ background: flowBg }}
+        minZoom={0.35}
         maxZoom={1.5}
-        defaultEdgeOptions={{
-          type: "smoothstep",
-          animated: true,
-        }}
+        defaultEdgeOptions={{ type: "smoothstep", animated: true }}
         proOptions={{ hideAttribution: true }}
       >
         <Background
-          color="#1e293b"
+          color={gridColor}
           gap={24}
           size={2}
-          style={{ opacity: 0.25 }}
+          style={{ opacity: 0.3 }}
         />
-        <Controls
-          className="bg-linear-to-br! from-slate-900/95 via-slate-800/90 to-slate-900/95 border-2! border-emerald-500/30! rounded-2xl! backdrop-blur-xl shadow-2xl! shadow-emerald-500/10"
-          showInteractive={false}
-        />
+        <Controls showInteractive={false} />
         <MiniMap
-          className="bg-linear-to-br! from-slate-900/95 via-slate-800/90 to-slate-900/95 border-2! border-emerald-500/30! rounded-2xl! backdrop-blur-xl shadow-2xl! shadow-emerald-500/10"
           nodeColor={(node) => {
             if (node.type === "input") return "#3b82f6";
             if (node.type === "agent") return "#10b981";
-            if (node.type === "tool") return "#3b82f6";
+            if (node.type === "tool") return "#6366f1";
             if (node.type === "output") return "#10b981";
             return "#64748b";
           }}
-          maskColor="rgba(10, 15, 30, 0.85)"
+          maskColor="color-mix(in oklch, var(--background) 86%, transparent)"
+          style={{
+            background: "color-mix(in oklch, var(--surface) 95%, transparent)",
+          }}
         />
       </ReactFlow>
     </div>

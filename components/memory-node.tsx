@@ -7,60 +7,90 @@ import { motion } from "framer-motion";
 interface MemoryNodeData {
   type: string;
   status: string;
+  isDark?: boolean;
 }
 
-interface MemoryNodeProps {
-  data: MemoryNodeData;
-}
+export const MemoryNode = memo(({ data }: { data: MemoryNodeData }) => {
+  const isActive = data.status === "active";
+  const handleBorder = "var(--background)";
 
-export const MemoryNode = memo(({ data }: MemoryNodeProps) => {
   return (
     <div className="relative">
       <Handle
         type="target"
-        position={Position.Left}
-        className="w-2.5 h-2.5 bg-emerald-500! border-2 border-slate-900"
+        position={Position.Top}
+        style={{
+          width: 9,
+          height: 9,
+          background: "#10b981",
+          border: `2px solid ${handleBorder}`,
+          borderRadius: "50%",
+        }}
       />
 
-      {/* Dot Grid Background */}
-      <div className="absolute inset-0 rounded-xl overflow-hidden opacity-30">
+      <motion.div
+        className="relative rounded-xl overflow-hidden w-[clamp(11rem,15vw,13.25rem)] cursor-default"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--surface) 0%, color-mix(in oklch, var(--primary) 8%, var(--surface)) 100%)",
+          border: "1.5px solid var(--border-strong)",
+          boxShadow: data.isDark
+            ? "0 4px 20px rgba(0,0,0,0.3)"
+            : "0 2px 16px rgba(0,0,0,0.06)",
+        }}
+        whileHover={{
+          scale: 1.04,
+          x: 3,
+          boxShadow: data.isDark
+            ? "0 8px 28px rgba(0,0,0,0.4), 0 0 12px rgba(16,185,129,0.12)"
+            : "0 6px 24px rgba(0,0,0,0.1)",
+          borderColor:
+            "color-mix(in oklch, var(--primary) 40%, var(--border-strong))",
+        }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      >
+        {/* Right accent line */}
         <div
-          className="absolute inset-0"
+          className="absolute right-0 top-2 bottom-2 w-0.5 rounded-full"
           style={{
-            backgroundImage:
-              "radial-gradient(circle, #10b981 1px, transparent 1px)",
-            backgroundSize: "16px 16px",
-            opacity: 0.12,
+            background:
+              "linear-gradient(180deg, transparent, rgba(16,185,129,0.7), transparent)",
           }}
         />
-      </div>
 
-      <motion.div
-        className="relative bg-gradient-to-br from-slate-900/90 via-slate-900 to-emerald-950/30 border border-slate-700/70 rounded-xl p-4 shadow-xl min-w-[200px] hover:border-emerald-500/50 transition-all backdrop-blur-sm"
-        whileHover={{ scale: 1.03, x: 5 }}
-        transition={{ type: "spring", stiffness: 400 }}
-      >
-        <div className="flex items-center gap-3">
-          <motion.div
-            className="w-10 h-10 bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 rounded-lg flex items-center justify-center ring-1 ring-emerald-500/30"
-            whileHover={{ scale: 1.1 }}
-          >
-            <Database className="w-5 h-5 text-emerald-400" />
-          </motion.div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h4 className="text-white font-semibold text-sm">{data.type}</h4>
-              <HardDrive className="w-3 h-3 text-emerald-500" />
+        <div className="px-4 py-3.5">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center ring-1"
+              style={{
+                background: "rgba(16,185,129,0.1)",
+                border: "1px solid rgba(16,185,129,0.2)",
+              }}
+            >
+              <Database className="text-emerald-500 w-[18px] h-[18px]" />
             </div>
-            <div className="flex items-center gap-1.5">
-              <div
-                className={`w-1.5 h-1.5 rounded-full ${
-                  data.status === "active"
-                    ? "bg-emerald-400 animate-pulse"
-                    : "bg-slate-400"
-                }`}
-              />
-              <p className="text-xs text-slate-400 capitalize">{data.status}</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <h4
+                  className="font-semibold text-sm"
+                  style={{ color: "var(--foreground)" }}
+                >
+                  {data.type || "Memory"}
+                </h4>
+                <HardDrive className="w-3 h-3 text-emerald-500 shrink-0" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`}
+                  style={isActive ? { animation: "pulse 2s infinite" } : {}}
+                />
+                <span
+                  className="text-xs capitalize"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  {data.status}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -68,8 +98,14 @@ export const MemoryNode = memo(({ data }: MemoryNodeProps) => {
 
       <Handle
         type="source"
-        position={Position.Right}
-        className="w-2.5 h-2.5 bg-emerald-500! border-2 border-slate-900"
+        position={Position.Bottom}
+        style={{
+          width: 9,
+          height: 9,
+          background: "#10b981",
+          border: `2px solid ${handleBorder}`,
+          borderRadius: "50%",
+        }}
       />
     </div>
   );

@@ -39,10 +39,12 @@ export default function AgentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0f1e] flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-          <p className="text-slate-400">Loading agent details...</p>
+          <p className="text-[var(--muted-foreground)]">
+            Loading agent details...
+          </p>
         </div>
       </div>
     );
@@ -50,12 +52,12 @@ export default function AgentPage() {
 
   if (error || !agent) {
     return (
-      <div className="min-h-screen bg-[#0a0f1e] flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-400 mb-4">{error || "Agent not found"}</p>
           <button
             onClick={() => router.push("/")}
-            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors cursor-pointer"
           >
             Go Back
           </button>

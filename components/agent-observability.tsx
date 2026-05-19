@@ -4,10 +4,12 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
+  Panel,
+  useReactFlow,
   useNodesState,
   useEdgesState,
   addEdge,
+  MarkerType,
   type Node,
   type Edge,
   type Connection,
@@ -18,26 +20,29 @@ import {
   RefreshCw,
   Play,
   Eye,
-  X,
-  Maximize2,
+  ArrowLeft,
   Activity,
   FileText,
   Database,
   BarChart3,
   Settings,
   Layers,
-  GitBranch,
+  Zap,
+  ChevronRight,
+  Maximize2,
+  Wrench,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import type { AgentDetail } from "@/types/observability";
-// Node components
 import { AgentNode } from "@/components/agent-node";
 import { ToolNode } from "@/components/tool-node";
 import { MemoryNode } from "@/components/memory-node";
 import { AnimatedTabs } from "@/components/ui/animated-tabs";
-import { BackgroundBeams } from "@/components/ui/background-beams";
 import { AgentChatDialog } from "@/components/agent-chat-dialog";
 import { TracesView } from "@/components/traces-view";
 import { TraceFlowView } from "@/components/trace-flow-view";
+import { applyDagreLayout } from "@/lib/graph-layout";
 import type { Trace } from "@/types/observability";
 
 interface AgentObservabilityProps {
@@ -52,422 +57,633 @@ const nodeTypes = {
 };
 
 const tabs = [
-  { id: "overview", label: "Overview", icon: <Activity className="w-4 h-4" /> },
-  { id: "logs", label: "Logs", icon: <FileText className="w-4 h-4" /> },
   {
-    id: "evals",
-    label: "Evals/Scorers",
-    icon: <BarChart3 className="w-4 h-4" />,
+    id: "overview",
+    label: "Overview",
+    icon: <Activity className="w-3.5 h-3.5" />,
   },
-  { id: "memory", label: "Memory", icon: <Database className="w-4 h-4" /> },
-  { id: "usage", label: "Usage", icon: <Settings className="w-4 h-4" /> },
+  { id: "logs", label: "Logs", icon: <FileText className="w-3.5 h-3.5" /> },
+  { id: "evals", label: "Evals", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+  { id: "memory", label: "Memory", icon: <Database className="w-3.5 h-3.5" /> },
+  { id: "usage", label: "Usage", icon: <Settings className="w-3.5 h-3.5" /> },
 ];
 
+// ─── Inner canvas controls (must live inside ReactFlow provider) ─────────────
+function CanvasControls({
+  isDark,
+  toolCount,
+  hasMemory,
+}: {
+  isDark: boolean;
+  toolCount: number;
+  hasMemory: boolean;
+}) {
+  const { fitView } = useReactFlow();
+
+  const surface = isDark
+    ? "color-mix(in oklch, var(--surface) 90%, transparent)"
+    : "color-mix(in oklch, var(--surface) 94%, transparent)";
+  const border = "var(--border-strong)";
+  const muted = "var(--muted-foreground)";
+  const fg = "var(--foreground)";
+
+  return (
+    <>
+      {/* ── Top-left: view label ── */}
+      <Panel position="top-left" style={{ margin: 12 }}>
+        <div
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide backdrop-blur-sm"
+          style={{
+            background: surface,
+            border: `1px solid ${border}`,
+            color: muted,
+          }}
+        >
+          <Layers className="w-3 h-3" />
+          <span>Structure</span>
+        </div>
+      </Panel>
+
+      {/* ── Top-right: node stats ── */}
+      <Panel position="top-right" style={{ margin: 12 }}>
+        <div
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] backdrop-blur-sm"
+          style={{ background: surface, border: `1px solid ${border}` }}
+        >
+          {hasMemory && (
+            <span
+              className="flex items-center gap-1"
+              style={{ color: "#10b981" }}
+            >
+              <Database className="w-3 h-3" />
+              <span className="font-semibold">Memory</span>
+            </span>
+          )}
+          {hasMemory && toolCount > 0 && (
+            <div style={{ width: 1, height: 12, background: border }} />
+          )}
+          {toolCount > 0 && (
+            <span
+              className="flex items-center gap-1"
+              style={{ color: isDark ? "#818cf8" : "#6366f1" }}
+            >
+              <Wrench className="w-3 h-3" />
+              <span className="font-semibold">
+                {toolCount} tool{toolCount !== 1 ? "s" : ""}
+              </span>
+            </span>
+          )}
+        </div>
+      </Panel>
+
+      {/* ── Bottom-center: legend + fit-view ── */}
+      <Panel position="bottom-center" style={{ marginBottom: 14 }}>
+        <div className="flex items-center gap-2">
+          {/* Legend */}
+          <div
+            className="flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] backdrop-blur-sm"
+            style={{ background: surface, border: `1px solid ${border}` }}
+          >
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span style={{ color: muted }}>Agent</span>
+            </div>
+            <div style={{ width: 1, height: 10, background: border }} />
+            <div className="flex items-center gap-1.5">
+              <div
+                className="w-2 h-2 rounded-full"
+                style={{ background: isDark ? "#818cf8" : "#6366f1" }}
+              />
+              <span style={{ color: muted }}>Tool</span>
+            </div>
+            {hasMemory && (
+              <>
+                <div style={{ width: 1, height: 10, background: border }} />
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span style={{ color: muted }}>Memory</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Fit-view button */}
+          <button
+            onClick={() => fitView({ padding: 0.22, duration: 500 })}
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-semibold transition-all hover:scale-105 active:scale-95"
+            style={{
+              background: surface,
+              border: `1px solid ${border}`,
+              color: fg,
+              cursor: "pointer",
+            }}
+          >
+            <Maximize2 className="w-3 h-3" />
+            Fit
+          </button>
+        </div>
+      </Panel>
+    </>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
 export function AgentObservability({
   agent,
   onClose,
 }: AgentObservabilityProps) {
+  const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [activeView, setActiveView] = useState<
     "execution" | "structure" | "traces"
   >("structure");
-  const [spanCount, setSpanCount] = useState(4);
+  const [spanCount] = useState(4);
   const [autoZoom, setAutoZoom] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [selectedTrace, setSelectedTrace] = useState<Trace | null>(null);
 
+  // ── Build nodes + edges then apply Dagre auto-layout ──────────────────────
   useEffect(() => {
-    // Build node graph from agent data
-    const initialNodes: Node[] = [];
-    const initialEdges: Edge[] = [];
+    const rawNodes: Node[] = [];
+    const rawEdges: Edge[] = [];
 
-    // Agent node (center)
-    initialNodes.push({
+    const toolEdgeColor = isDark ? "#818cf8" : "#6366f1";
+
+    // Agent (central hub)
+    rawNodes.push({
       id: agent.id,
       type: "agent",
-      position: { x: 400, y: 200 },
+      position: { x: 0, y: 0 }, // Dagre will override
       data: {
         name: agent.name,
         model: agent.model,
         status: agent.status,
         instructions: agent.instructions,
+        isDark,
       },
     });
 
-    // Memory node (left)
+    // Memory node + edge
     if (agent.memory) {
-      initialNodes.push({
+      rawNodes.push({
         id: `memory_${agent.id}`,
         type: "memory",
-        position: { x: 100, y: 200 },
-        data: {
-          type: agent.memory.type,
-          status: agent.memory.status,
-        },
+        position: { x: 0, y: 0 },
+        data: { type: agent.memory.type, status: agent.memory.status, isDark },
       });
-
-      initialEdges.push({
+      rawEdges.push({
         id: `edge-memory-${agent.id}`,
         source: `memory_${agent.id}`,
         target: agent.id,
         animated: true,
-        style: { stroke: "#10b981" },
+        type: "default", // bezier — looks elegant for a single edge
+        style: { stroke: "#10b981", strokeWidth: 2.5 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: "#10b981",
+          width: 16,
+          height: 16,
+        },
       });
     }
 
-    // Tool nodes (right)
-    agent.tools.forEach((tool, index) => {
-      const yOffset = index * 120;
-      initialNodes.push({
-        id: `tool_${tool.name}_${agent.id}`,
+    // Tool nodes + edges
+    agent.tools.forEach((tool) => {
+      const toolId = `tool_${tool.name}_${agent.id}`;
+      rawNodes.push({
+        id: toolId,
         type: "tool",
-        position: { x: 700, y: yOffset + 50 },
-        data: {
-          name: tool.name,
-          description: tool.description,
-        },
+        position: { x: 0, y: 0 },
+        data: { name: tool.name, description: tool.description, isDark },
       });
-
-      initialEdges.push({
-        id: `edge-${agent.id}-tool-${tool.name}`,
+      rawEdges.push({
+        id: `edge-${agent.id}-${toolId}`,
         source: agent.id,
-        target: `tool_${tool.name}_${agent.id}`,
+        target: toolId,
         animated: false,
-        style: { stroke: "#64748b" },
+        type: "smoothstep",
+        style: { stroke: toolEdgeColor, strokeWidth: 2 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: toolEdgeColor,
+          width: 14,
+          height: 14,
+        },
       });
     });
 
-    setNodes(initialNodes);
-    setEdges(initialEdges);
-  }, [agent, setNodes, setEdges]);
+    const hasManyTools = agent.tools.length > 5;
+
+    // Apply Dagre layout — use horizontal flow when tool count is high.
+    const laidOutNodes = applyDagreLayout(rawNodes, rawEdges, {
+      direction: hasManyTools ? "LR" : "TB",
+      rankSep: hasManyTools ? 190 : 220,
+      nodeSep: hasManyTools ? 76 : 110,
+      marginX: 84,
+      marginY: 84,
+    });
+
+    setNodes(laidOutNodes);
+    setEdges(rawEdges);
+  }, [agent, setNodes, setEdges, isDark]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
+    [setEdges],
   );
+
+  const flowBg = "var(--background)";
+  const dotColor = isDark ? "rgba(100,116,139,0.35)" : "rgba(148,163,184,0.45)";
 
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 bg-[#0a0f1e] flex flex-col"
+        className="fixed inset-0 z-50 flex flex-col bg-[var(--background)]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.25 }}
       >
-        {/* Background Effects */}
-        <BackgroundBeams className="opacity-20" />
+        {/* ── ReactFlow theme overrides ── */}
+        <style jsx global>{`
+          .react-flow__pane {
+            cursor: grab;
+          }
+          .react-flow__pane:active {
+            cursor: grabbing;
+          }
 
-        {/* Header */}
-        <div className="relative bg-linear-to-r from-slate-900/80 via-slate-900/70 to-slate-900/80 border-b border-slate-700/50 px-6 py-4 backdrop-blur-xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          /* Controls panel */
+          .react-flow__controls {
+            border-radius: 12px !important;
+            overflow: hidden;
+            border: 1px solid var(--border-strong) !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+            background: transparent !important;
+          }
+          .react-flow__controls-button {
+            background: var(--surface) !important;
+            border: none !important;
+            border-bottom: 1px solid var(--border) !important;
+            color: var(--muted-foreground) !important;
+            transition: all 0.15s ease !important;
+            width: 28px !important;
+            height: 28px !important;
+          }
+          .react-flow__controls-button:hover {
+            background: var(--surface-2) !important;
+            color: #10b981 !important;
+          }
+          .react-flow__controls-button svg {
+            fill: currentColor !important;
+          }
+          .react-flow__controls-button:last-child {
+            border-bottom: none !important;
+          }
+
+          /* Edges */
+          .react-flow__edge-path {
+            transition:
+              stroke-width 0.2s,
+              filter 0.2s;
+          }
+          .react-flow__edge:hover .react-flow__edge-path {
+            filter: drop-shadow(0 0 6px currentColor);
+          }
+          .react-flow__edge.animated .react-flow__edge-path {
+            stroke-dasharray: 6 3;
+            animation: flow-dash 0.55s linear infinite;
+          }
+          @keyframes flow-dash {
+            to {
+              stroke-dashoffset: -9;
+            }
+          }
+
+          /* Selected node ring */
+          .react-flow__node.selected > div {
+            outline: 2px solid rgba(16, 185, 129, 0.6);
+            outline-offset: 3px;
+            border-radius: 16px;
+          }
+
+          /* Handles */
+          .react-flow__handle {
+            width: 10px !important;
+            height: 10px !important;
+            border-width: 2px !important;
+            transition:
+              transform 0.15s ease,
+              box-shadow 0.15s ease;
+          }
+          .react-flow__handle:hover {
+            transform: scale(1.4);
+            box-shadow: 0 0 8px currentColor;
+          }
+
+          .react-flow__attribution {
+            display: none;
+          }
+        `}</style>
+
+        {/* ── Header ── */}
+        <motion.div
+          className="shrink-0 border-b border-[var(--border-strong)] bg-[var(--surface)] px-5 py-4"
+          initial={{ y: -16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <div className="flex items-center justify-between mb-3.5">
+            <div className="flex items-center gap-3">
+              <motion.button
+                onClick={() => (onClose ? onClose() : router.back())}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-strong)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-2)] transition-all text-sm cursor-pointer"
+                whileHover={{ x: -2 }}
+                whileTap={{ scale: 0.96 }}
               >
-                <div className="w-10 h-10 bg-linear-to-br from-emerald-500/30 to-emerald-600/20 rounded-xl flex items-center justify-center ring-2 ring-emerald-500/30">
-                  <Activity className="w-5 h-5 text-emerald-400" />
-                </div>
-              </motion.div>
-              <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">
-                  {agent.name}
-                </h2>
-                <div className="flex items-center space-x-3 mt-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                    <span className="text-sm text-slate-400 capitalize">
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span className="font-medium">Back</span>
+              </motion.button>
+
+              <div className="flex items-center gap-3">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 22,
+                    delay: 0.1,
+                  }}
+                  className="w-9 h-9 bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 rounded-xl flex items-center justify-center ring-2 ring-emerald-500/20"
+                >
+                  <Activity className="text-emerald-600 dark:text-emerald-400 w-[18px] h-[18px]" />
+                </motion.div>
+                <div>
+                  <h2 className="text-lg font-bold text-[var(--foreground)] leading-tight tracking-tight">
+                    {agent.name}
+                  </h2>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-xs text-[var(--muted-foreground)] capitalize">
                       {agent.status}
                     </span>
+                    <span className="text-[var(--muted-foreground)] opacity-40">
+                      ·
+                    </span>
+                    <span className="text-xs font-mono text-[var(--muted-foreground)] bg-[var(--surface-2)] px-1.5 py-0.5 rounded border border-[var(--border-strong)]">
+                      {agent.model}
+                    </span>
+                    <span className="text-[var(--muted-foreground)] opacity-40">
+                      ·
+                    </span>
+                    <span className="text-xs text-[var(--muted-foreground)]">
+                      {agent.tools.length} tools
+                    </span>
                   </div>
-                  <span className="text-slate-600">•</span>
-                  <span className="text-xs text-slate-500 font-mono">
-                    {agent.model}
-                  </span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <motion.button
-                onClick={() => setIsChatOpen(true)}
-                className="px-5 py-2.5 bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-lg text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <div className="flex items-center gap-2">
-                  <Play className="w-4 h-4" />
-                  Test Agent
-                </div>
-              </motion.button>
-              <motion.button
-                className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <Maximize2 className="w-4 h-4 text-slate-400" />
-              </motion.button>
-              {onClose && (
-                <motion.button
-                  onClick={onClose}
-                  className="p-2 hover:bg-slate-800 rounded-lg transition-colors group"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <X className="w-5 h-5 text-slate-400 group-hover:text-red-400 transition-colors" />
-                </motion.button>
-              )}
-            </div>
+
+            <motion.button
+              onClick={() => setIsChatOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <Play className="w-3.5 h-3.5" />
+              Test Agent
+            </motion.button>
           </div>
 
-          {/* Tabs */}
           <AnimatedTabs
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
-        </div>
+        </motion.div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Left Sidebar - Traces */}
+        {/* ── 3-column body ── */}
+        <div className="flex-1 flex overflow-hidden min-h-0">
+          {/* Left – Traces sidebar */}
           <motion.div
-            className="w-72 bg-linear-to-b from-slate-900/40 to-slate-900/20 border-r border-slate-700/50 overflow-hidden backdrop-blur-sm"
-            initial={{ x: -100, opacity: 0 }}
+            className="w-[clamp(13rem,18vw,17rem)] border-r border-[var(--border-strong)] bg-[var(--surface)] overflow-hidden flex flex-col"
+            initial={{ x: -40, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ duration: 0.35, ease: "easeOut", delay: 0.1 }}
           >
             <TracesView agentId={agent.id} onTraceSelect={setSelectedTrace} />
           </motion.div>
 
-          {/* Center - Flow Diagram */}
+          {/* Center – Flow canvas */}
           <motion.div
-            className="flex-1 relative"
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            className="flex-1 relative min-w-0"
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.35, ease: "easeOut", delay: 0.15 }}
           >
-            <style jsx global>{`
-              .react-flow__controls {
-                box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
-              }
+            <AnimatePresence mode="wait">
+              {activeView === "traces" ? (
+                <motion.div
+                  key="traces"
+                  className="absolute inset-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <TraceFlowView trace={selectedTrace} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="structure"
+                  className="absolute inset-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    nodeTypes={nodeTypes}
+                    fitView
+                    fitViewOptions={{ padding: 0.26, duration: 500 }}
+                    style={{ background: flowBg }}
+                    defaultEdgeOptions={{
+                      type: "smoothstep",
+                      style: { strokeWidth: 2.5 },
+                    }}
+                    nodesDraggable
+                    nodesConnectable={false}
+                    proOptions={{ hideAttribution: true }}
+                  >
+                    {/* Dot grid background (modern workflow-editor style) */}
+                    <Background
+                      variant={"dots" as any}
+                      color={dotColor}
+                      gap={22}
+                      size={1.5}
+                    />
+                    <Controls showInteractive={false} />
 
-              .react-flow__controls-button {
-                background: linear-gradient(
-                  135deg,
-                  rgba(15, 23, 42, 0.95) 0%,
-                  rgba(30, 41, 59, 0.9) 100%
-                ) !important;
-                border: none !important;
-                border-bottom: 1px solid rgba(71, 85, 105, 0.3) !important;
-                transition: all 0.2s ease !important;
-                color: rgba(148, 163, 184, 0.9) !important;
-              }
-
-              .react-flow__controls-button:hover {
-                background: linear-gradient(
-                  135deg,
-                  rgba(16, 185, 129, 0.15) 0%,
-                  rgba(5, 150, 105, 0.1) 100%
-                ) !important;
-                color: rgba(16, 185, 129, 1) !important;
-                transform: scale(1.05);
-              }
-
-              .react-flow__controls-button:hover svg {
-                color: rgba(16, 185, 129, 1) !important;
-              }
-
-              .react-flow__controls-button svg {
-                fill: currentColor !important;
-                transition: all 0.2s ease !important;
-              }
-
-              .react-flow__minimap {
-                box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
-              }
-
-              /* Enhanced Edge Styling */
-              .react-flow__edge-path {
-                stroke-width: 3 !important;
-                filter: drop-shadow(0 0 8px currentColor);
-              }
-
-              .react-flow__edge.animated path {
-                stroke-dasharray: 5;
-                animation: dashdraw 0.5s linear infinite;
-              }
-
-              @keyframes dashdraw {
-                from {
-                  stroke-dashoffset: 10;
-                }
-              }
-
-              .react-flow__edge .react-flow__edge-path {
-                transition: stroke 0.3s ease, stroke-width 0.3s ease;
-              }
-
-              .react-flow__edge:hover .react-flow__edge-path {
-                stroke-width: 4 !important;
-                filter: drop-shadow(0 0 12px currentColor);
-              }
-            `}</style>
-            {activeView === "traces" ? (
-              <TraceFlowView trace={selectedTrace} />
-            ) : (
-              <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                nodeTypes={nodeTypes}
-                fitView
-                className="bg-[#0a0f1e]"
-                defaultEdgeOptions={{
-                  type: "smoothstep",
-                  animated: true,
-                  style: { stroke: "#10b981", strokeWidth: 3 },
-                }}
-              >
-                <Background
-                  color="#1e293b"
-                  gap={20}
-                  size={1.5}
-                  style={{ opacity: 0.3 }}
-                />
-                <Controls
-                  className="bg-linear-to-br! from-slate-900/95 via-slate-800/90 to-slate-900/95 border-2! border-emerald-500/30! backdrop-blur-xl shadow-2xl! shadow-emerald-500/10 "
-                  showInteractive={false}
-                />
-              </ReactFlow>
-            )}
+                    {/* Canvas overlays with fit-view, legend, node stats */}
+                    <CanvasControls
+                      isDark={isDark}
+                      toolCount={agent.tools.length}
+                      hasMemory={!!agent.memory}
+                    />
+                  </ReactFlow>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
-          {/* Right Sidebar - Timeline */}
+          {/* Right – Details panel */}
           <motion.div
-            className="w-80 bg-linear-to-b from-slate-900/40 to-slate-900/20 border-l border-slate-700/50 p-5 overflow-y-auto backdrop-blur-sm"
-            initial={{ x: 100, opacity: 0 }}
+            className="w-[clamp(14rem,20vw,18rem)] border-l border-[var(--border-strong)] bg-[var(--surface)] overflow-y-auto flex flex-col"
+            initial={{ x: 40, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ duration: 0.35, ease: "easeOut", delay: 0.1 }}
           >
-            <div className="flex items-center justify-between mb-5">
+            {/* Panel header */}
+            <div className="sticky top-0 z-10 bg-[var(--surface)] border-b border-[var(--border-strong)] px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wide">
+                <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-sm font-semibold text-[var(--foreground)]">
                   Timeline
-                </h3>
+                </span>
               </div>
               <motion.button
-                className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-[var(--surface-2)] rounded-lg transition-colors cursor-pointer"
                 whileHover={{ rotate: 180 }}
                 transition={{ duration: 0.3 }}
               >
-                <RefreshCw className="w-4 h-4 text-slate-400" />
+                <RefreshCw className="w-3.5 h-3.5 text-[var(--muted-foreground)]" />
               </motion.button>
             </div>
 
-            {/* View Toggle */}
-            <div className="flex space-x-2 mb-6">
-              <motion.button
-                onClick={() => setActiveView("execution")}
-                className={`flex-1 px-4 py-2.5 text-xs rounded-lg font-medium transition-all ${
-                  activeView === "execution"
-                    ? "bg-linear-to-r from-emerald-500/20 to-emerald-600/10 text-emerald-400 border border-emerald-500/30"
-                    : "text-slate-400 hover:bg-slate-800/50 border border-transparent"
-                }`}
-                whileHover={{ scale: 1.02 }}
-              >
-                Execution
-              </motion.button>
-              <motion.button
-                onClick={() => setActiveView("structure")}
-                className={`flex-1 px-4 py-2.5 text-xs rounded-lg font-medium transition-all ${
-                  activeView === "structure"
-                    ? "bg-linear-to-r from-emerald-500/20 to-emerald-600/10 text-emerald-400 border border-emerald-500/30"
-                    : "text-slate-400 hover:bg-slate-800/50 border border-transparent"
-                }`}
-                whileHover={{ scale: 1.02 }}
-              >
-                Structure
-              </motion.button>
-              <motion.button
-                onClick={() => setActiveView("traces")}
-                className={`flex-1 px-4 py-2.5 text-xs rounded-lg font-medium transition-all ${
-                  activeView === "traces"
-                    ? "bg-linear-to-r from-emerald-500/20 to-emerald-600/10 text-emerald-400 border border-emerald-500/30"
-                    : "text-slate-400 hover:bg-slate-800/50 border border-transparent"
-                }`}
-                whileHover={{ scale: 1.02 }}
-              >
-                Traces
-              </motion.button>
-            </div>
-
-            {/* Span Count */}
-            <motion.div
-              className="mb-6 p-4 bg-linear-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700/50"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-slate-400 font-semibold uppercase tracking-wide">
-                  Span count
-                </span>
-                <span className="text-lg font-bold text-emerald-400">
-                  {spanCount}
-                </span>
+            <div className="p-4 space-y-3">
+              {/* View toggle */}
+              <div className="grid grid-cols-3 gap-1 p-1 bg-[var(--surface-2)] rounded-xl border border-[var(--border-strong)]">
+                {(["execution", "structure", "traces"] as const).map((view) => (
+                  <motion.button
+                    key={view}
+                    onClick={() => setActiveView(view)}
+                    className={`py-1.5 text-[11px] rounded-lg font-semibold transition-all capitalize cursor-pointer ${
+                      activeView === view
+                        ? "bg-[var(--surface)] text-emerald-700 dark:text-emerald-400 shadow-sm"
+                        : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    }`}
+                    whileTap={{ scale: 0.96 }}
+                  >
+                    {view}
+                  </motion.button>
+                ))}
               </div>
-              <div className="flex items-center space-x-3">
-                <motion.button
-                  className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg transition-colors"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <Play className="w-4 h-4 text-emerald-400" />
-                </motion.button>
-                <div className="flex-1 h-2 bg-slate-700/50 rounded-full overflow-hidden">
+
+              {/* Span count */}
+              <div className="p-3.5 bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-xl space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
+                    Spans
+                  </span>
+                  <span className="text-lg font-bold text-[var(--foreground)]">
+                    {spanCount}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-[var(--surface-3)] rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-linear-to-r from-emerald-500 to-emerald-600"
+                    className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
                     initial={{ width: 0 }}
-                    animate={{ width: "25%" }}
-                    transition={{ duration: 1, ease: "easeOut" }}
+                    animate={{ width: "30%" }}
+                    transition={{ duration: 1.2, ease: "easeOut", delay: 0.5 }}
                   />
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-[10px] text-[var(--muted-foreground)]">
+                    0
+                  </span>
+                  <span className="text-[10px] text-[var(--muted-foreground)]">
+                    Max 20
+                  </span>
+                </div>
               </div>
-            </motion.div>
 
-            {/* Auto Zoom */}
-            <motion.div
-              className="flex items-center justify-between p-4 bg-linear-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700/50"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4 text-slate-400" />
-                <span className="text-xs text-slate-400 font-semibold">
-                  Auto-zoom to node
-                </span>
+              {/* Auto-zoom toggle */}
+              <div className="p-3.5 bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-3.5 h-3.5 text-[var(--muted-foreground)]" />
+                  <span className="text-xs font-medium text-[var(--foreground)]">
+                    Auto-zoom
+                  </span>
+                </div>
+                <motion.button
+                  onClick={() => setAutoZoom(!autoZoom)}
+                  className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${autoZoom ? "bg-emerald-500" : "bg-[var(--surface-3)]"}`}
+                  whileTap={{ scale: 0.9 }}
+                  aria-label="Toggle auto-zoom"
+                >
+                  <motion.div
+                    className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow"
+                    animate={{ x: autoZoom ? 18 : 2 }}
+                    transition={{ type: "spring", stiffness: 600, damping: 40 }}
+                  />
+                </motion.button>
               </div>
-              <motion.button
-                onClick={() => setAutoZoom(!autoZoom)}
-                className={`relative w-12 h-6 rounded-full transition-colors ${
-                  autoZoom ? "bg-emerald-500" : "bg-slate-700"
-                }`}
-                whileTap={{ scale: 0.95 }}
-              >
-                <motion.div
-                  className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-lg"
-                  animate={{ x: autoZoom ? 26 : 2 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              </motion.button>
-            </motion.div>
+
+              {/* Tools list */}
+              {agent.tools.length > 0 && (
+                <div className="p-3.5 bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-xl">
+                  <span className="text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider block mb-2.5">
+                    Tools · {agent.tools.length}
+                  </span>
+                  <div className="space-y-1.5">
+                    {agent.tools.map((tool, i) => (
+                      <motion.div
+                        key={tool.name}
+                        initial={{ opacity: 0, x: 8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 + 0.3 }}
+                        className="flex items-center gap-2 px-2.5 py-2 bg-[var(--surface)] border border-[var(--border-strong)] rounded-lg group"
+                      >
+                        <div className="w-5 h-5 rounded bg-blue-500/10 flex items-center justify-center shrink-0">
+                          <Zap className="w-2.5 h-2.5 text-blue-500 dark:text-blue-400" />
+                        </div>
+                        <span className="text-xs font-medium text-[var(--foreground)] truncate flex-1">
+                          {tool.name}
+                        </span>
+                        <ChevronRight className="w-3 h-3 text-[var(--muted-foreground)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Instructions */}
+              {agent.instructions && (
+                <div className="p-3.5 bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-xl">
+                  <span className="text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider block mb-2">
+                    Instructions
+                  </span>
+                  <p className="text-xs text-[var(--muted-foreground)] leading-relaxed line-clamp-5">
+                    {agent.instructions}
+                  </p>
+                </div>
+              )}
+            </div>
           </motion.div>
         </div>
 
-        {/* Chat Dialog */}
+        {/* Chat dialog */}
         <AgentChatDialog
           agent={agent}
           isOpen={isChatOpen}

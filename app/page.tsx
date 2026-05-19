@@ -59,7 +59,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e]">
+    <div className="min-h-screen bg-[var(--background)]">
       <Header isConnected={isAgentOnline} />
       {isAgentOnline && <Sidebar />}
       <div className={isAgentOnline ? "ml-64 pt-16" : "pt-16"}>

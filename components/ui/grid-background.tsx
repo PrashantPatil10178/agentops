@@ -12,12 +12,23 @@ export function GridBackground({
   return (
     <div
       className={cn(
-        "h-screen w-full bg-[#0a0f1e] bg-grid-white/[0.02] relative flex items-center justify-center",
-        className
+        "h-screen w-full bg-[var(--background)] relative flex items-center justify-center bg-grid-dark dark:bg-grid-dark",
+        className,
       )}
+      style={{
+        backgroundImage:
+          "linear-gradient(to right, var(--border-strong) 1px, transparent 1px), linear-gradient(to bottom, var(--border-strong) 1px, transparent 1px)",
+        backgroundSize: "60px 60px",
+      }}
     >
-      {/* Radial gradient for the container to give a faded look */}
-      <div className="absolute pointer-events-none inset-0 flex items-center justify-center bg-[#0a0f1e] mask-[radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+      {/* Radial fade mask */}
+      <div
+        className="absolute pointer-events-none inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 30%, var(--background) 80%)",
+        }}
+      />
       {children}
     </div>
   );
